@@ -78,15 +78,29 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
       }#revised 240901
 
 
-      checkld<-lapply(ld.list,function(ll,rs){
-        ldcoh.sub=ll[(colnames(ll)%in%rs),(colnames(ll)%in%rs)]
-        ldcoh.sub=round(ldcoh.sub,3)
-        if(is.matrix(ldcoh.sub)){
-          ldcoh.chk=(ldcoh.sub>=collinear)
-          ldcoh.chk[lower.tri(ldcoh.chk,diag=TRUE)]=0
+      checkld<-lapply(ld.list,function(ll){
+        #ldcoh.sub=ll[(colnames(ll)%in%rs),(colnames(ll)%in%rs)]
+        #revised 250214
+        if(any(sel.set%in%colnames(ll))){
+
+          if(sum(colnames(ll)%in%sel.set)==1){
+            ldcoh.sub=matrix(ll[(rownames(ll)%in%remn.set),colnames(ll)%in%sel.set],ncol=1,dimnames=list(rownames(ll)[rownames(ll)%in%remn.set],colnames(ll)[colnames(ll)%in%sel.set]))
+          }else{
+            ldcoh.sub=ll[(rownames(ll)%in%remn.set),(colnames(ll)%in%sel.set)]
+          }
+
+          #cat("The ldcoh.sub dimension is ",dim(ldcoh.sub)[1], "and ",dim(ldcoh.sub)[2],"\n")
+          ldcoh.sub=round(ldcoh.sub,3)
+
+          if(is.matrix(ldcoh.sub)){
+            ldcoh.chk=(abs(ldcoh.sub)>=collinear)
+            #ldcoh.chk[lower.tri(ldcoh.chk,diag=TRUE)]=0
+          }
+        }else{
+          ldcoh.chk=FALSE
         }
-        return(any(colSums(ldcoh.chk)>0))
-      },remn.set)
+        return(any(ldcoh.chk==TRUE))
+      })
 
       checkld=unlist(checkld)
       if(any(checkld)){break}
@@ -103,7 +117,7 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
       #}#revised 240228
 
 
-      condgwas.list<-Calc_condBF(selgwas.list,selld.list,meta.snp=NULL,sel.set,n_cohort,env,PCs,out_loc=NULL,ncores,cred.thr=NULL,actual.geno,collinear)
+      condgwas.list<-Calc_condBF(selgwas.list,selld.list,which.ld,meta.snp=NULL,sel.set,n_cohort,env,PCs,out_loc=NULL,ncores,cred.thr=NULL,actual.geno,collinear)
       condgwas.list=as.data.frame(condgwas.list)
 
       if(any(condgwas.list$pvalue_association[!is.na(condgwas.list$pvalue_association)]>pvalue_cutoff)){
@@ -154,7 +168,14 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
                 sel.gwas=sel.gwas[loc[!is.na(loc)],]
               }else{
                 loc=match(sel.gwas$MARKERNAME,colnames(sel.ld))
-                sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
+                #sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
+                if(length(loc[!is.na(loc)])>1){#revise 250214
+                  sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
+                  addsel.ld=matrix(addsel.ld[rownames(addsel.ld)%in%rownames(sel.ld),],ncol=1,dimnames=list(rownames(sel.ld),i.remn))
+                }else{
+                  sel.ld=matrix(sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]],dimnames=list(rownames(sel.ld)[loc[!is.na(loc)]],colnames(sel.ld)[loc[!is.na(loc)]]))
+                  addsel.ld=matrix(addsel.ld[rownames(addsel.ld)%in%rownames(sel.ld),],dimnames=list(rownames(sel.ld),i.remn))
+                }
               }
             }
             beta.se=meta_sel_condest(add.gwas,sel.gwas,addsel.ld,sel.ld,collinear,actual.geno)
@@ -312,7 +333,14 @@ Calc_condBF<-function(gwas.list,ld.list,which.ld,meta.snp,sel.set,n_cohort,env,P
                 sel.gwas=sel.gwas[loc[!is.na(loc)],]
               }else{
                 loc=match(sel.gwas$MARKERNAME,colnames(sel.ld))
-                sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
+                #sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
+                if(length(loc[!is.na(loc)])>1){#revise 250214
+                  sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
+                  addsel.ld=matrix(addsel.ld[rownames(addsel.ld)%in%rownames(sel.ld),],ncol=1,dimnames=list(rownames(sel.ld),i.remn))
+                }else{
+                  sel.ld=matrix(sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]],dimnames=list(rownames(sel.ld)[loc[!is.na(loc)]],colnames(sel.ld)[loc[!is.na(loc)]]))
+                  addsel.ld=matrix(addsel.ld[rownames(addsel.ld)%in%rownames(sel.ld),],dimnames=list(rownames(sel.ld),i.remn))
+                }
               }
             }
             beta.se=meta_sel_condest(add.gwas,sel.gwas,addsel.ld,sel.ld,collinear,actual.geno)
