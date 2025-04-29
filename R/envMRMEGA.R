@@ -132,11 +132,11 @@ MR_mega_run<-function(beta_pop,invse2_pop,cohort_count_filt,env,PCs,ncores){
   pcCount=dim(PCs)[2]
   #Run linear regression in parallel and return results of hyporthese testings
   ncores <- min(c(ncores, parallel::detectCores(logical = TRUE)))
-  print("Linear regression model for each genetic variant")
+  #print("Linear regression model for each genetic variant")
   if(ncores>1){
     cl<-makeCluster(ncores,type="FORK")#shared memory
     registerDoParallel(cl)
-    lr_out<-foreach(i_snp=1:dim(beta_pop)[1],.combine=rbind,.export=c("i_snp"))%dopar%{
+    lr_out<-foreach(i_snp=1:dim(beta_pop)[1],.combine=rbind)%dopar%{
       check_w=!is.na(invse2_pop[i_snp,-1])
 
       if((length(unlist(beta_pop[i_snp,-1])[check_w])-(pcCount+ifelse(is.null(env),0,dim(env)[2])))<=2){
@@ -152,7 +152,7 @@ MR_mega_run<-function(beta_pop,invse2_pop,cohort_count_filt,env,PCs,ncores){
       return(lr_out)
     }
   }else{
-    lr_out<-foreach(i_snp=1:dim(beta_pop)[1],.combine=rbind,.export=c("i_snp"))%do%{
+    lr_out<-foreach(i_snp=1:dim(beta_pop)[1],.combine=rbind)%do%{
       #cat("i_snp=",i_snp,"\n")
       check_w=!is.na(invse2_pop[i_snp,-1])
       #cat("the length of Y is ",length(unlist(beta_pop[i_snp,-1])[check_w])," and the number of cov is ",dim(as.matrix(covs)[check_w,])[2],"\n")

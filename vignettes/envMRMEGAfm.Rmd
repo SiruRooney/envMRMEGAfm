@@ -184,7 +184,7 @@ LD=c("esn","gwd","lwk","msl","yri")
 #Each African population is stratified into male and female cohorts.
 pop=c("esn.female","esn.male","gwd.female","gwd.male","lwk.female","lwk.male","msl.female","msl.male","yri.female","yri.male")
 
-gwasld=read_gwasld(gwas.loc,ld.loc,which.ld=rep(LD,each=2),cohort_name=pop,ld_name=LD,out_loc=NULL,actual.geno=TRUE)
+gwasld=read_gwasld(gwas.loc,ld.loc,which.ld=rep(LD,each=2),cohort_name=pop,ld_name=LD,out_loc=NULL)
 
 gwas.list=gwasld$gwas.list
 
@@ -207,7 +207,7 @@ More specifically, the above arguments present in `read_gwasld` function are:
 
 - `out_loc`: Path to save pre-processed GWAS files and LD structure. By default, `out_loc`=NULL.
 
-- `actual.geno`: An indicator to specify whether the true cohort-level LD structure is provided. If we can obtain the real cohort-level LD structures directly or derive LD structures from the real individual-level genotype data of the involved cohorts, the argument `actual.geno` is set to `TRUE`. If we estimate LD approximation from the reference sample as a replacement, `actual.geno` is set to `FALSE`. By default `actual.geno`=TRUE.
+- `actual.geno`: An indicator to specify whether the true cohort-level LD structure is provided. If we can obtain the real cohort-level LD structures directly or derive LD structures from the real individual-level genotype data of the involved cohorts, the argument `actual.geno` is set to `TRUE`. If we estimate LD approximation from the reference sample as a replacement, `actual.geno` is set to `FALSE`. By default `actual.geno`=FALSE.The default value is consistent for GCTA-COJO setting.
 
 ## Fine-mapping
 
@@ -240,7 +240,8 @@ names(ld.list)
 
 ######################################env-MR-MEGA fine-mapping###################################
 tictoc::tic("Run env-MR-MEGA fine-mapping method")
-envmetafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=2),meta.file=envMRMEGAout,PCs=pcs,env=sexsmk,out_loc=NULL,ncores=1,collinear=0.9,pvalue_cutoff=5e-8,cred.thr=0.99,actual.geno=TRUE)
+library(doParallel)
+envmetafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=2),meta.file=envMRMEGAout,PCs=pcs,env=sexsmk,out_loc=NULL,ncores=2,collinear=0.9,pvalue_cutoff=5e-8,cred.thr=0.99)
 tictoc::toc()
 envmetafm.out
 
@@ -252,7 +253,8 @@ envmetafm.out
 ```{r,eval=TRUE}
 ######################################MR-MEGA fine-mapping###################################
 tictoc::tic("Run env-MR-MEGA fine-mapping method")
-metafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=2),meta.file=MRMEGAout,PCs=pcs,env=NULL,out_loc=NULL,ncores=1,collinear=0.9,pvalue_cutoff=5e-8,cred.thr=0.99,actual.geno=TRUE)
+library(doParallel)
+metafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=2),meta.file=MRMEGAout,PCs=pcs,env=NULL,out_loc=NULL,ncores=2,collinear=0.9,pvalue_cutoff=5e-8,cred.thr=0.99)
 tictoc::toc()
 
 metafm.out
@@ -270,6 +272,14 @@ The results from both MR-MEGAfm and env-MR-MEGAfm comprise two main parts:
 - `chisq_association`, `ndf_association` and `pvalue_association`: test of the null hypothesis of no association of each variant. `chisq_`, `ndf_` and `pvalue_` refer to chisq value, number of degrees of freedom and p-values of the corresponding test.
 
 - `chisq_residual`, `ndf_residual` and `pvalue_residual`: test of residual heterogeneity.
+
+- `logBF`: log of Bayesian Factor.
+
+- `PPs`: Posterior probability.
+
+- `max_ld`: The maximum of LD value between each target selected variant and the variants in the credible set.
+
+- `cs.inc`: The indicator for determining whether the variants should be included in the credible sets based on the specified credible threshold.
 
 
 For MR-MEGAfm, 

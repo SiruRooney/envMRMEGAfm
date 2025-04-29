@@ -4,7 +4,15 @@
 \alias{meta_sel_condest}
 \title{Conditional analysis of the linear regression model}
 \usage{
-meta_sel_condest(add.gwas, sel.gwas, addsel.ld, sel.ld, collinear, actual.geno)
+meta_sel_condest(
+  add.gwas,
+  sel.gwas,
+  addsel.ld,
+  sel.ld,
+  Vp.med,
+  collinear,
+  actual.geno
+)
 }
 \arguments{
 \item{add.gwas}{A dataframe which contains the GWAS information for the target SNP. GWAS information comprise "MARKERNAME","CHROMOSOME","POSITION","EA","NEA","EAF","N","BETA","SE".}
@@ -14,6 +22,8 @@ meta_sel_condest(add.gwas, sel.gwas, addsel.ld, sel.ld, collinear, actual.geno)
 \item{addsel.ld}{A LD matrix containing the correlation matrix between the target SNP and the SNP set.}
 
 \item{sel.ld}{A LD matrix containing the correlation between the SNP set.}
+
+\item{Vp.med}{The median of variance of phenotype. Refer to GCTA-COJO.}
 
 \item{collinear}{A threshold to filter out the target SNP in high LD with the SNP set. If the squared multiple correlation between the target SNP exceeds the threshold,
 such as 0.9, the target SNP is ignored.}

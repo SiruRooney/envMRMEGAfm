@@ -4,15 +4,7 @@
 \alias{read_gwasld}
 \title{Read-in GWAS files and LD structures}
 \usage{
-read_gwasld(
-  gwas.loc,
-  ld.loc,
-  which.ld,
-  cohort_name,
-  ld_name,
-  out_loc = NULL,
-  actual.geno = TRUE
-)
+read_gwasld(gwas.loc, ld.loc, which.ld, cohort_name, ld_name, out_loc = NULL)
 }
 \arguments{
 \item{gwas.loc}{A file contains a vector of length K_g. Each component of the vector refers to the location of GWAS file.}
@@ -26,8 +18,6 @@ read_gwasld(
 \item{ld_name}{A character vector of length K_ld. Each component of the vector corresponds to one LD structure.}
 
 \item{out_loc}{Path to save pre-processed GWAS files and LD structures. By default, out_loc=NULL.}
-
-\item{actual.geno}{An indicator to specify whether the true cohort-level LD structure is applied. By default actual.geno=TRUE}
 }
 \value{
 The output is a list with two main components. One component contains the pre-processed GWAS file list, and another component contains the pre-processed LD structures.

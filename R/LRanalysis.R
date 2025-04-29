@@ -25,6 +25,7 @@ Get_GenInverse<-function(V.item){
 #'@param sel.gwas  A dataframe which contains the GWAS information for SNP set.
 #'@param addsel.ld A LD matrix containing the correlation matrix between the target SNP and the SNP set.
 #'@param sel.ld A LD matrix containing the correlation between the SNP set.
+#'@param Vp.med The median of variance of phenotype. Refer to GCTA-COJO.
 #'@param collinear A threshold to filter out the target SNP in high LD with the SNP set. If the squared multiple correlation between the target SNP exceeds the threshold,
 #'such as 0.9, the target SNP is ignored.
 #'@param actual.geno An indicator to specify whether the true cohort-level LD structure is applied. If actual.geno is TRUE, the inputted LD structures are derived from the true individual-level genotype data.
@@ -33,18 +34,11 @@ Get_GenInverse<-function(V.item){
 #'@author Siru Wang
 #'@importFrom stats median
 
-meta_sel_condest<-function(add.gwas,sel.gwas,addsel.ld,sel.ld,collinear,actual.geno){
+meta_sel_condest<-function(add.gwas,sel.gwas,addsel.ld,sel.ld,Vp.med,collinear,actual.geno){
 
   if(!is.matrix(addsel.ld)){addsel.ld=as.matrix(addsel.ld)}
   if(!is.matrix(sel.ld)){sel.ld=as.matrix(sel.ld)}
 
-  h.bufsel=2*sel.gwas$EAF*(1-sel.gwas$EAF)
-  Vp.sel=sel.gwas$N*h.bufsel*sel.gwas$SE*sel.gwas$SE+h.bufsel*sel.gwas$BETA*sel.gwas$BETA*sel.gwas$N/(sel.gwas$N-1)
-  Vp.medsel=median(Vp.sel)
-
-  h.bufadd=2*add.gwas$EAF*(1-add.gwas$EAF)
-  Vp.add=add.gwas$N*h.bufadd*add.gwas$SE*add.gwas$SE+h.bufadd*add.gwas$BETA*add.gwas$BETA*add.gwas$N/(add.gwas$N-1)
-  Vp.medadd=median(Vp.add)
 
   MSX.sel=2*sel.gwas$EAF*(1-sel.gwas$EAF)
   if(!is.matrix(MSX.sel)){MSX.sel<-as.matrix(MSX.sel)}
@@ -72,14 +66,12 @@ meta_sel_condest<-function(add.gwas,sel.gwas,addsel.ld,sel.ld,collinear,actual.g
 
     MSX.addN=MSX.add*Nd.add
   }else{
-
-    Nd.sel=(Vp.medsel-MSX.sel*sel.gwas$BETA*sel.gwas$BETA)/(MSX.sel*sel.gwas$SE*sel.gwas$SE)+1
+    #revised 250415
+    Nd.sel=sel.gwas$Neff
+    Nd.add=add.gwas$Neff
     if(!is.matrix(Nd.sel)){Nd.sel<-as.matrix(Nd.sel)}
-    #if(!is.matrix(MSX.sel)){MSX.sel=as.matrix(MSX.sel)}
-
-    Nd.add=(Vp.medadd-MSX.add*add.gwas$BETA*add.gwas$BETA)/(MSX.add*add.gwas$SE*add.gwas$SE)+1
     if(!is.matrix(Nd.add)){Nd.add<-as.matrix(Nd.add)}
-    #if(!is.matrix(MSX.add)){MSX.add=as.matrix(MSX.add)}
+
 
     if(length(Nd.sel)!=1){
       Ndmin=apply(Nd.sel,1,function(x,y){apply(y,1,function(yy,xx){min(yy,xx)},x)},Nd.sel)
@@ -97,6 +89,7 @@ meta_sel_condest<-function(add.gwas,sel.gwas,addsel.ld,sel.ld,collinear,actual.g
     MSX.addN=MSX.add*Nd.add
   }
 
+
   Nd.medsel=median(Nd.sel)
   if(dim(MSX.selN)[2]!=1){
     inv.selN=Get_GenInverse(MSX.selN)
@@ -111,9 +104,11 @@ meta_sel_condest<-function(add.gwas,sel.gwas,addsel.ld,sel.ld,collinear,actual.g
     inv.sel.ld=1/sel.ld
   }
 
+  sq.mul.cor=as.vector(round(t(addsel.ld)%*%inv.sel.ld%*%addsel.ld,6))
   #cat("The squared multiple correlation is ",round(t(addsel.ld)%*%inv.sel.ld%*%addsel.ld,6),"\n")
-  if(!is.na(round(t(addsel.ld)%*%inv.sel.ld%*%addsel.ld,6))){
-    if(round(t(addsel.ld)%*%inv.sel.ld%*%addsel.ld,6)<collinear){
+
+  if(!is.na(sq.mul.cor)){
+    if(sq.mul.cor<collinear){
       D1BETA1=MSX.sel*Nd.sel*sel.gwas$BETA
       cond.BETA=add.gwas$BETA-inv.addN%*%add.selN%*%inv.selN%*%D1BETA1
       cond.BETA=round(cond.BETA,6)
@@ -125,25 +120,25 @@ meta_sel_condest<-function(add.gwas,sel.gwas,addsel.ld,sel.ld,collinear,actual.g
 
       if(isTRUE(actual.geno)){
         Ve=sum(MSX.sel*Nd.sel*bJ*sel.gwas$BETA)
-        jma_Ve=((Nd.medsel-1)*Vp.medsel-Ve)/(Nd.medsel-dim(sel.gwas)[1])
+        jma_Ve=((Nd.medsel-1)*Vp.med-Ve)/(Nd.medsel-dim(sel.gwas)[1])
         if(jma_Ve<0){
           stop("Residual variance is out of boundary. The model is over-fitted. Please specify a more stringent p-value cut-off.")
         }
         #cond.SE2=(jma_Ve-(MSX.add*Nd.add*cond.BETA*add.gwas$BETA)/(Nd.add-dim(sel.gwas)[1]-1))*((MSX.add*Nd.add)-add.selN%*%inv.selN%*%t(add.selN))/(MSX.add*Nd.add)^2
         cond.SE2=(jma_Ve-(MSX.add*Nd.add*cond.BETA*add.gwas$BETA)/(Nd.add-dim(sel.gwas)[1]-1))*(1/(MSX.add*Nd.add))
       }else{
-        jma_Ve=Vp.medsel
+        jma_Ve=Vp.med
         #cond.SE2=jma_Ve*((MSX.add*Nd.add)-add.selN%*%inv.selN%*%t(add.selN))/(MSX.add*Nd.add)^2
         cond.SE2=jma_Ve*1/(MSX.add*Nd.add)
       }
 
       cond.invSE2=round(cond.SE2^{-1})
-      beta.se=data.frame(MARKERNAME=add.gwas$MARKERNAME,cond.BETA=cond.BETA,cond.invSE2=cond.invSE2)
+      beta.se=data.frame(MARKERNAME=add.gwas$MARKERNAME,cond.BETA=cond.BETA,cond.SE=sqrt(cond.SE2),cond.invSE2=cond.invSE2,mul.cor=sq.mul.cor)
     }else{
-      beta.se=data.frame(MARKERNAME=add.gwas$MARKERNAME,cond.BETA=NA,cond.invSE2=NA)
+      beta.se=data.frame(MARKERNAME=add.gwas$MARKERNAME,cond.BETA=NA,cond.SE=NA,cond.invSE2=NA,mul.cor=sq.mul.cor)
     }
   }else{
-    beta.se=data.frame(MARKERNAME=add.gwas$MARKERNAME,cond.BETA=NA,cond.invSE2=NA)
+    beta.se=data.frame(MARKERNAME=add.gwas$MARKERNAME,cond.BETA=NA,cond.SE=NA,cond.invSE2=NA,mul.cor=sq.mul.cor)
   }
 
   return(beta.se)

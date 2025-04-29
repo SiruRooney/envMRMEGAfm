@@ -15,15 +15,16 @@
 #'such as 0.9, the target SNP is ignored.
 #'@param pvalue_cutoff A cutoff p-value to identify the potential associated SNP with the smallest p-value exceeding the cutoff p-value. By default, pvalue_cutoff=5e-8.
 #'@param cred.thr Credible threshold for the credible set for each selected potential SNP. By default, cred.thr=0.99 refers to 99% credible sets.
-#'@param actual.geno An indicator to specify whether the true cohort-level LD structure is applied. If actual.geno is TRUE, the inputted LD structures are derived from the true individual-level genotype data.
+#'@param actual.geno An indicator to specify whether the true cohort-level LD structure is applied. If actual.geno is TRUE, the inputted LD structures are derived from the true individual-level genotype data. By default, actual.geno=FALSE is recommended in GCTA-COJO software.
 #'@return A list of length 2. One component contains the selected potential associated SNP. Another component contains their credible sets with the specified thresholds. By default, the credible threshold is set to 0.99.
 #'@export
 #'@import parallel
 #'@import doParallel
 #'@import foreach
 #'@importFrom dplyr left_join
+#'@importFrom stats setNames
 #'@author Siru Wang
-env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NULL,ncores=1,collinear=0.9,pvalue_cutoff=5e-8,cred.thr=0.99,actual.geno=TRUE){
+env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NULL,ncores=1,collinear=0.9,pvalue_cutoff=5e-8,cred.thr=0.99,actual.geno=FALSE){
 
   if(!is.list(gwas.list)){
     stop("The gwas files should be inputted as list!")
@@ -39,6 +40,30 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
   cat("The threshold for credible set is set to ", cred.thr,".\n")
   #####Initialization of gwas files and the corresponding genotype matrix############
 
+  #revised 250415
+  ncores <- min(c(ncores,parallel::detectCores(logical = TRUE)))
+  cl<-makeCluster(ncores,type="FORK")#shared memory
+  registerDoParallel(cl)
+  gwas.list<-foreach(i.pop=1:n_cohort, .final = function(x) {setNames(x,names(gwas.list))})%do%{
+    cat("i.pop is ",i.pop,"\n")
+    gwas.file=gwas.list[[i.pop]]
+
+    #calculate Vp revised 250415
+    h.buf=2*gwas.file$EAF*(1-gwas.file$EAF)
+    Vp.init=gwas.file$N*h.buf*gwas.file$SE*gwas.file$SE+h.buf*gwas.file$BETA*gwas.file$BETA*gwas.file$N/(gwas.file$N-1)
+    Vp.med=median(Vp.init)
+    gwas.file=data.frame(gwas.file,Vp.med=Vp.med)
+
+    if(!isTRUE(actual.geno)){
+      cat("Whether the inputted LD is cohort-matched LD",isTRUE(actual.geno),"\n")
+      Neff=(Vp.med-h.buf*gwas.file$BETA*gwas.file$BETA)/(h.buf*gwas.file$SE*gwas.file$SE)+1
+      gwas.file=data.frame(gwas.file,Neff=Neff)
+    }
+
+    return(gwas.file)
+  }
+  stopCluster(cl)
+
   sel.set=NULL
   remn.set=NULL
   meta.temp<-meta.file
@@ -53,17 +78,21 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
 
     if(sum(as.numeric(idx.minp))>1){
       meta.minp=meta.temp[!idx.na,][idx.minp,]
-      sel.set=c(sel.set,meta.minp$MARKERNAME[which.max(meta.minp$chisq_association)])
+      new.sel=meta.minp$MARKERNAME[which.max(meta.minp$chisq_association)]
+      #sel.set=c(sel.set,meta.minp$MARKERNAME[which.max(meta.minp$chisq_association)])
     }else{
-      sel.set=c(sel.set,meta.temp$MARKERNAME[which.min(meta.temp$pvalue_association)])
+      new.sel=meta.temp$MARKERNAME[which.min(meta.temp$pvalue_association)]
+      #sel.set=c(sel.set,meta.temp$MARKERNAME[which.min(meta.temp$pvalue_association)])
     }
 
-    print("The set of the selected SNPs is")
-    print(sel.set)
+    sel.set=c(sel.set,new.sel)
+    #print("The set of the selected SNPs is")
+    #print(sel.set)
 
     remn.set=meta.temp$MARKERNAME[!(meta.temp$MARKERNAME%in%sel.set)]
     trace.cond<-trace.cond+1
-    cat("trace.cond is ",trace.cond,"\n")
+    cat("At the ",trace.cond,"iteration, the set of the selected SNPs include \n")
+    print(sel.set)
 
     if(trace.cond>1){
       selgwas.list=lapply(gwas.list,function(ml,ss){
@@ -71,39 +100,18 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
         return(ml[loc[!is.na(loc)],])
       },sel.set)
 
-      selld.list=vector("list",n_cohort)
-      for(i.pop in 1:n_cohort){
-        loc=match(sel.set,colnames(ld.list[[which.ld[i.pop]]]))
-        selld.list[[i.pop]]=ld.list[[which.ld[i.pop]]][loc[!is.na(loc)],loc[!is.na(loc)]]
-      }#revised 240901
+      selld.list=vector("list",length(ld.list))
+      names(selld.list)=names(ld.list)
+      for(i.pop in 1:length(ld.list)){
+        loc=match(sel.set,colnames(ld.list[[i.pop]]))
+        selld.list[[i.pop]]=ld.list[[i.pop]][loc[!is.na(loc)],loc[!is.na(loc)]]
+      }#revised 250404
 
-
-      checkld<-lapply(ld.list,function(ll){
-        #ldcoh.sub=ll[(colnames(ll)%in%rs),(colnames(ll)%in%rs)]
-        #revised 250214
-        if(any(sel.set%in%colnames(ll))){
-
-          if(sum(colnames(ll)%in%sel.set)==1){
-            ldcoh.sub=matrix(ll[(rownames(ll)%in%remn.set),colnames(ll)%in%sel.set],ncol=1,dimnames=list(rownames(ll)[rownames(ll)%in%remn.set],colnames(ll)[colnames(ll)%in%sel.set]))
-          }else{
-            ldcoh.sub=ll[(rownames(ll)%in%remn.set),(colnames(ll)%in%sel.set)]
-          }
-
-          #cat("The ldcoh.sub dimension is ",dim(ldcoh.sub)[1], "and ",dim(ldcoh.sub)[2],"\n")
-          ldcoh.sub=round(ldcoh.sub,3)
-
-          if(is.matrix(ldcoh.sub)){
-            ldcoh.chk=(abs(ldcoh.sub)>=collinear)
-            #ldcoh.chk[lower.tri(ldcoh.chk,diag=TRUE)]=0
-          }
-        }else{
-          ldcoh.chk=FALSE
-        }
-        return(any(ldcoh.chk==TRUE))
-      })
-
-      checkld=unlist(checkld)
-      if(any(checkld)){break}
+      #selld.list=vector("list",n_cohort)
+      #for(i.pop in 1:n_cohort){
+      #  loc=match(sel.set,colnames(ld.list[[which.ld[i.pop]]]))
+      #  selld.list[[i.pop]]=ld.list[[which.ld[i.pop]]][loc[!is.na(loc)],loc[!is.na(loc)]]
+      #}#revised 240901
 
       #selgeno.list=lapply(geno.list,function(gl,ss){
       #  loc=match(ss,colnames(gl));
@@ -133,86 +141,60 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
     registerDoParallel(cl)
     newgwas.list<-foreach(i.pop=1:n_cohort,.packages=c("foreach","dplyr"),.export=c("meta_sel_condest","meta_sel_joinest","Get_GenInverse"))%dopar%{
 
-      cat("i.pop is ",i.pop,"\n")
+      #cat("i.pop is ",i.pop,"\n")
 
       gwas.file=gwas.list[[i.pop]]
       #gwas.ld=ld.list[[i.pop]] #revised 240227
       gwas.ld=ld.list[[which.ld[i.pop]]] #revised 240901
       #gwas.geno=geno.list[[uniLD[i.pop]]]#revised 240228
 
-      cond.upd=foreach(i.remn=remn.set,.combine=rbind,.export=c("meta_sel_condest","meta_sel_joinest","Get_GenInverse"))%do%{
-        #cat("i.remn is ",i.remn,"\n")
-        if(all(!gwas.file$MARKERNAME%in%i.remn)|all(!colnames(gwas.ld)%in%i.remn)){
-          beta.se=data.frame(MARKERNAME=i.remn,cond.BETA=NA,cond.invSE2=NA)
+      cond.upd=foreach(i.remn=remn.set,.combine=rbind,.export=c("meta_sel_condest","Get_GenInverse"))%do%{
+
+        if(all(!gwas.file$MARKERNAME%in%i.remn)|all(!colnames(gwas.ld)%in%i.remn)|any(!(sel.set%in%gwas.file$MARKERNAME))|any(!(sel.set%in%colnames(gwas.ld)))){# revised 250310
+          #revised 250317
+          if(any(sel.set%in%rownames(gwas.ld))&(i.remn%in%colnames(gwas.ld))){
+            addsel.maxld=max(abs(gwas.ld[rownames(gwas.ld)%in%sel.set,colnames(gwas.ld)%in%i.remn]),na.rm=TRUE)
+          }else{
+            addsel.maxldi=NA
+          }
+          beta.se=data.frame(MARKERNAME=i.remn,cond.BETA=NA,cond.SE=NA,cond.invSE2=NA,mul.cor=NA,ld.coh=addsel.maxld)
         }else{
+
+          #revised 250317
+          if(any(sel.set%in%rownames(gwas.ld))&(i.remn%in%colnames(gwas.ld))){
+            addsel.maxld=max(abs(gwas.ld[rownames(gwas.ld)%in%sel.set,colnames(gwas.ld)%in%i.remn]),na.rm=TRUE)
+          }else{
+            addsel.maxld=NA
+          }
 
           loc.gwas=match(sel.set,gwas.file$MARKERNAME)
           loc.ld=match(sel.set,colnames(gwas.ld))
           sel.gwas=gwas.file[loc.gwas[!is.na(loc.gwas)],]
           add.gwas=gwas.file[gwas.file$MARKERNAME%in%i.remn,]
 
-          if((length(loc.ld[!is.na(loc.ld)])>0)&(length(loc.gwas[!is.na(loc.gwas)])>0)){
+          addsel.ld=matrix(gwas.ld[,colnames(gwas.ld)%in%i.remn],ncol=1,dimnames=list(rownames(gwas.ld),i.remn))
+          addsel.ld=matrix(addsel.ld[loc.ld[!is.na(loc.ld)]],ncol=1,dimnames=list(rownames(addsel.ld)[loc.ld[!is.na(loc.ld)]],i.remn))
 
-            addsel.ld=matrix(gwas.ld[,colnames(gwas.ld)%in%i.remn],ncol=1,dimnames=list(rownames(gwas.ld),i.remn))
-            addsel.ld=matrix(addsel.ld[loc.ld[!is.na(loc.ld)]],ncol=1,dimnames=list(rownames(addsel.ld)[loc.ld[!is.na(loc.ld)]],i.remn))
-
-            if(length(loc.ld[!is.na(loc.ld)])>1){
-              sel.ld=gwas.ld[loc.ld[!is.na(loc.ld)],loc.ld[!is.na(loc.ld)]]
-            }else{
-              sel.ld=matrix(gwas.ld[loc.ld[!is.na(loc.ld)],loc.ld[!is.na(loc.ld)]],dimnames=list(rownames(gwas.ld)[loc.ld[!is.na(loc.ld)]],colnames(gwas.ld)[loc.ld[!is.na(loc.ld)]]))
-            }
-
-            if(dim(sel.ld)[2]!=dim(sel.gwas)[1]){
-              if(dim(sel.ld)[2]<dim(sel.gwas)[1]){
-                loc=match(colnames(sel.ld),sel.gwas$MARKERNAME)
-                sel.gwas=sel.gwas[loc[!is.na(loc)],]
-              }else{
-                loc=match(sel.gwas$MARKERNAME,colnames(sel.ld))
-                #sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
-                if(length(loc[!is.na(loc)])>1){#revise 250214
-                  sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
-                  addsel.ld=matrix(addsel.ld[rownames(addsel.ld)%in%rownames(sel.ld),],ncol=1,dimnames=list(rownames(sel.ld),i.remn))
-                }else{
-                  sel.ld=matrix(sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]],dimnames=list(rownames(sel.ld)[loc[!is.na(loc)]],colnames(sel.ld)[loc[!is.na(loc)]]))
-                  addsel.ld=matrix(addsel.ld[rownames(addsel.ld)%in%rownames(sel.ld),],dimnames=list(rownames(sel.ld),i.remn))
-                }
-              }
-            }
-            beta.se=meta_sel_condest(add.gwas,sel.gwas,addsel.ld,sel.ld,collinear,actual.geno)
+          if(length(loc.ld[!is.na(loc.ld)])>1){
+            sel.ld=gwas.ld[loc.ld[!is.na(loc.ld)],loc.ld[!is.na(loc.ld)]]
           }else{
-            loc=match(i.remn,colnames(gwas.ld))
-
-            if(!is.na(gwas.ld[loc[!is.na(loc)],loc[!is.na(loc)]])){#241004
-              if(length(loc[!is.na(loc)])>1){
-                add.ld=gwas.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
-              }else{
-                add.ld=matrix(gwas.ld[loc[!is.na(loc)],loc[!is.na(loc)]],dimnames=list(rownames(gwas.ld[[i.pop]])[loc[!is.na(loc)]],colnames(gwas.ld[[i.pop]])[loc[!is.na(loc)]]))
-              }
-
-              if(dim(add.ld)[2]!=dim(add.gwas)[1]){
-                if(dim(add.ld)[2]<dim(add.gwas)[1]){
-                  loc=match(colnames(add.ld),add.gwas$MARKERNAME)
-                  add.gwas=add.gwas[loc[!is.na(loc)],]
-                }else{
-                  loc=match(add.gwas$MARKERNAME,colnames(add.ld))
-                  add.ld=add.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
-                }
-              }
-
-              jbeta.se=meta_sel_joinest(sel.gwas=add.gwas,sel.ld=add.ld,actual.geno)
-              beta.se=data.frame(MARKERNAME=jbeta.se$MARKERNAME,cond.BETA=jbeta.se$Join.BETA,cond.invSE2=jbeta.se$Join.invSE2)
-
-            }else{
-              beta.se=data.frame(MARKERNAME=i.remn,cond.BETA=NA,cond.invSE2=NA)
-            }
-
-
+            sel.ld=matrix(gwas.ld[loc.ld[!is.na(loc.ld)],loc.ld[!is.na(loc.ld)]],dimnames=list(rownames(gwas.ld)[loc.ld[!is.na(loc.ld)]],colnames(gwas.ld)[loc.ld[!is.na(loc.ld)]]))
           }
+
+          if(any(is.na(sel.ld))|any(is.na(addsel.ld))|any(is.na(sel.gwas$BETA))|any(is.na(sel.gwas$SE))){
+            beta.se=data.frame(MARKERNAME=i.remn,cond.BETA=NA,cond.SE=NA,cond.invSE2=NA,mul.cor=NA,ld.coh=addsel.maxld)
+          }else{
+            #revised 250415
+            Vp.med=add.gwas$Vp.med
+            beta.se=meta_sel_condest(add.gwas,sel.gwas,addsel.ld,sel.ld,Vp.med,collinear,actual.geno)
+            beta.se=data.frame(beta.se,ld.coh=addsel.maxld)
+          }
+
         }
 
         return(beta.se)
       }
-      gwas.file.cond<-subset(gwas.file,select=c(MARKERNAME,POSITION,CHROMOSOME))
+      gwas.file.cond<-subset(gwas.file,select=c(MARKERNAME,POSITION,CHROMOSOME,EA,NEA))
       gwas.file.cond<-left_join(gwas.file.cond,cond.upd,by="MARKERNAME")
 
       return(gwas.file.cond)
@@ -220,25 +202,76 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
     stopCluster(cl)
     names(newgwas.list)=names(gwas.list)
 
+    #Assigned to the same reference panel
+    print("All GWAS are assigned to the same reference allele")
+    print("At the same, the correponding LD structures should be adjusted accordingly.")
+    #print("Set the ancestry 1 as the reference allele......")
+
+    for(i_pop in 2:length(newgwas.list)){
+      #print(paste("Check ancestry",i_pop,sep=""))
+      for(j_pop in (i_pop-1):1){
+        cover=newgwas.list[[i_pop-j_pop]]$MARKERNAME%in%newgwas.list[[i_pop]]$MARKERNAME
+        loc=match(newgwas.list[[i_pop-j_pop]]$MARKERNAME,newgwas.list[[i_pop]]$MARKERNAME)
+        same_ea=(newgwas.list[[i_pop]]$EA[loc[complete.cases(loc)]]!=newgwas.list[[i_pop-j_pop]]$EA[cover])
+
+        if(any(same_ea)){
+          newgwas.list[[i_pop]]$EA[loc[complete.cases(loc)]][same_ea]=newgwas.list[[i_pop-j_pop]]$EA[cover][same_ea]
+          newgwas.list[[i_pop]]$NEA[loc[complete.cases(loc)]][same_ea]=newgwas.list[[i_pop-j_pop]]$NEA[cover][same_ea]
+          #newgwas.list[[i_pop]]$EAF[loc[complete.cases(loc)]][same_ea]=1-newgwas.list[[i_pop]]$EAF[loc[complete.cases(loc)]][same_ea]
+          newgwas.list[[i_pop]]$cond.BETA[loc[complete.cases(loc)]][same_ea]=-newgwas.list[[i_pop]]$cond.BETA[loc[complete.cases(loc)]][same_ea]
+        }
+      }
+    }
+
+
     exp=paste("beta_pop=data.frame(MARKERNAME=remn.set,",paste("Pop",1:n_cohort,"=NA",sep ="",collapse=","),")",sep="")
     eval(parse(text=exp))
     exp2=paste("invse2_pop=data.frame(MARKERNAME=remn.set,",paste("Pop",1:n_cohort,"=NA",sep ="",collapse=","),")",sep="")
     eval(parse(text=exp2))
+
+    #250317
+    exp3=paste("mcor_pop=data.frame(MARKERNAME=remn.set,",paste("Pop",1:n_cohort,"=NA",sep ="",collapse=","),")",sep="")
+    eval(parse(text=exp3))
+    exp4=paste("ld_pop=data.frame(MARKERNAME=remn.set,",paste("Pop",1:n_cohort,"=NA",sep ="",collapse=","),")",sep="")
+    eval(parse(text=exp4))
+
     cohort_count_filt=data.frame(MARKERNAME=remn.set,count_pop=0)
     for(i.pop in 1:n_cohort){
-      cat("i.pop is ",i.pop,"\n")
+      #cat("i.pop is ",i.pop,"\n")
       cover=beta_pop$MARKERNAME%in%newgwas.list[[i.pop]]$MARKERNAME
       loc=match(beta_pop$MARKERNAME,newgwas.list[[i.pop]]$MARKERNAME)
       beta_pop[,i.pop+1][cover]=newgwas.list[[i.pop]]$cond.BETA[loc[complete.cases(loc)]]
+      #revised 250317
+      mcor_pop[,i.pop+1][cover]=newgwas.list[[i.pop]]$mul.cor[loc[complete.cases(loc)]]
+      ld_pop[,i.pop+1][cover]=newgwas.list[[i.pop]]$ld.coh[loc[complete.cases(loc)]]
+
       invse2_pop[,i.pop+1][cover]=newgwas.list[[i.pop]]$cond.invSE2[loc[complete.cases(loc)]]
       cohort_count_filt$count_pop[cover][which(!is.na(beta_pop[,i.pop+1][cover]))]=cohort_count_filt$count_pop[cover][which(!is.na(beta_pop[,i.pop+1][cover]))]+1
 
     }
-    meta.temp=MR_mega_run(beta_pop,invse2_pop,cohort_count_filt,env,PCs,ncores)
+
+    #revised 250317
+    mcor.thr=apply(mcor_pop[,-1],1,function(mp){
+      if(all(is.na(mp))){
+        thr=TRUE
+      }else{
+        thr=(max(mp,na.rm=TRUE)<collinear)
+      }
+      return(thr)})
+    tgcor.thr=apply(ld_pop[,-1],1,function(lp){
+      if(all(is.na(lp))){
+        thr=TRUE
+      }else{
+        thr=(max(lp,na.rm=TRUE)<collinear)
+      }
+      return(thr)
+    })
+
+    meta.temp=MR_mega_run(beta_pop[mcor.thr&tgcor.thr,],invse2_pop[mcor.thr&tgcor.thr,],cohort_count_filt[mcor.thr&tgcor.thr,],env,PCs,ncores)
 
   }
   cat("There are ",length(sel.set)," potential associated SNPs!","\n")
-  condBF_tgSNP<-Calc_condBF(gwas.list,ld.list,which.ld,meta.snp=meta.file$MARKERNAME,sel.set,n_cohort,env,PCs,out_loc,ncores,cred.thr,actual.geno,collinear=1)
+  condBF_tgSNP<-Calc_condBF(gwas.list,ld.list,which.ld,meta.snp=meta.file$MARKERNAME,sel.set,n_cohort,env,PCs,out_loc,ncores,cred.thr,actual.geno,collinear=2)
 
   return(list(sel.set=sel.set,tgCS.thr=condBF_tgSNP))
 }
@@ -272,6 +305,12 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
 #'@export
 Calc_condBF<-function(gwas.list,ld.list,which.ld,meta.snp,sel.set,n_cohort,env,PCs,out_loc,ncores,cred.thr,actual.geno,collinear){
 
+  logsum <- function(x) {
+    my.max <- max(x)
+    my.res <- my.max + log(sum(exp(x - my.max )))
+    return(my.res)
+  }
+
   if(!is.null(meta.snp)){
     condmeta.list=vector(mode="list",length=length(sel.set))
     names(condmeta.list)=sel.set
@@ -282,15 +321,61 @@ Calc_condBF<-function(gwas.list,ld.list,which.ld,meta.snp,sel.set,n_cohort,env,P
   for(tg.sel in sel.set){
     cat("The target selected genetic variant is", tg.sel,"\n")
 
-    if(length(sel.set)==1){
-      cond.sel=sel.set
-    }else{
-      cond.sel<-sel.set[!(sel.set%in%tg.sel)]
-    }
-
     if(!is.null(meta.snp)){
-      remn.set=meta.snp[!(meta.snp%in%cond.sel)]
+      cond.sel<-sel.set[!(sel.set%in%tg.sel)]
+
+      if(length(cond.sel)!=0){
+        remn.set=meta.snp[!(meta.snp%in%cond.sel)]
+      }else{
+        na.BF=(!is.na(meta.file$logBF))
+        meta.file$PPs[na.BF]=exp(meta.file$logBF[na.BF]-logsum(meta.file$logBF[na.BF]))
+        meta.desc=setorder(meta.file,-PPs,na.last=TRUE)
+
+        naidx=is.na(meta.desc$PPs)
+        meta.desc=meta.desc[!naidx,]
+
+        #revised 250319
+        exp=paste("ld_pop=data.frame(MARKERNAME=meta.desc$MARKERNAME,",paste("Pop",1:n_cohort,"=NA",sep ="",collapse=","),")",sep="")
+        eval(parse(text=exp))
+
+        for(pop.ld in 1:n_cohort){
+          tg.ld=ld.list[[which.ld[pop.ld]]]
+          if((tg.sel%in%colnames(tg.ld))&any(meta.desc$MARKERNAME%in%rownames(tg.ld))){
+            cover=meta.desc$MARKERNAME%in%rownames(tg.ld)
+            loc.ld=match(meta.desc$MARKERNAME,rownames(tg.ld))
+            ld_pop[,pop.ld+1][cover]=tg.ld[rownames(tg.ld)[loc.ld[complete.cases(loc.ld)]],colnames(tg.ld)%in%tg.sel]
+          }
+        }
+
+        ld_max=data.frame(MARKERNAME=ld_pop$MARKERNAME,maxld=apply(ld_pop[,-1],1,function(lp){
+          if(!all(is.na(lp))){
+            ld.m=lp[which.max(abs(lp))]
+          }else{
+            ld.m=NA
+          }
+          return(ld.m)}))
+
+        meta.desc=left_join(meta.desc,ld_max,by="MARKERNAME")
+        if(!is.null(cred.thr)){
+          csm=cumsum(meta.desc$PPs)
+          #condmeta.list[[tg.sel]]=meta.desc[1:(which(csm>cred.thr)[1]),]
+          #revised 250314
+          meta.desc=data.frame(meta.desc,cs.inc=rep(c(1,0),c(which(csm>cred.thr)[1],dim(meta.desc)[1]-which(csm>cred.thr)[1])))
+        }else{
+          #revised 250314
+          meta.desc=data.frame(meta.desc,cs.inc=rep(c(1,0),c(dim(meta.desc)[1],0)))
+          condmeta.list[[tg.sel]]=meta.desc
+        }
+
+
+        if(!is.null(out_loc)){
+          #condmeta.list=rbind(condmeta.list,meta.desc)
+          fwrite(meta.desc,file=paste0(out_loc,"/envmeta_",tg.sel,"_Neff_cvPPs.txt"),sep="\t")
+        }
+        next
+      }
     }else{
+      cond.sel<-sel.set[!(sel.set%in%tg.sel)]# revised 250220
       remn.set=tg.sel
     }
 
@@ -298,84 +383,62 @@ Calc_condBF<-function(gwas.list,ld.list,which.ld,meta.snp,sel.set,n_cohort,env,P
     ncores <- min(c(ncores,parallel::detectCores(logical = TRUE)))
     cl<-makeCluster(ncores,type="FORK")#shared memory
     registerDoParallel(cl)
-    newgwas.list<-foreach(i.pop=1:n_cohort,.packages="foreach",.export=c("meta_sel_condest","meta_sel_joinest","Get_GenInverse"))%dopar%{
+    newgwas.list<-foreach(i.pop=1:n_cohort,.packages="foreach",.export=c("meta_sel_condest","Get_GenInverse"))%dopar%{
 
-      cat("i.pop is ",i.pop,"\n")
+      #cat("i.pop is ",i.pop,"\n")
       gwas.file=gwas.list[[i.pop]]
       #gwas.ld=ld.list[[i.pop]]#revised 240327
       gwas.ld=ld.list[[which.ld[i.pop]]]#revised 240901
 
 
-      cond.upd=foreach(i.remn=remn.set,.combine=rbind,.export=c("meta_sel_condest","meta_sel_joinest","Get_GenInverse"))%do%{
+      cond.upd=foreach(i.remn=remn.set,.combine=rbind,.export=c("meta_sel_condest","Get_GenInverse"))%do%{
         #    cat("i.remn is ",i.remn,"\n")
-        if(all(!gwas.file$MARKERNAME%in%i.remn)|all(!colnames(gwas.ld)%in%i.remn)){
-          beta.se=data.frame(MARKERNAME=i.remn,cond.BETA=NA,cond.invSE2=NA)
+        if(all(!gwas.file$MARKERNAME%in%i.remn)|all(!colnames(gwas.ld)%in%i.remn)|any(!(cond.sel%in%gwas.file$MARKERNAME))|any(!(cond.sel%in%colnames(gwas.ld)))){
+          #revised 250314
+          if((tg.sel%in%rownames(gwas.ld))&(i.remn%in%colnames(gwas.ld))){
+            addtg.ld=gwas.ld[rownames(gwas.ld)%in%tg.sel,colnames(gwas.ld)%in%i.remn]
+          }else{
+            addtg.ld=NA
+          }
+          beta.se=data.frame(MARKERNAME=i.remn,cond.BETA=NA,cond.SE=NA,cond.invSE2=NA,mul.cor=NA,ld.coh=addtg.ld)
         }else{
+
+          #revised 250314
+          if((tg.sel%in%rownames(gwas.ld))&(i.remn%in%colnames(gwas.ld))){
+            addtg.ld=gwas.ld[rownames(gwas.ld)%in%tg.sel,colnames(gwas.ld)%in%i.remn]
+          }else{
+            addtg.ld=NA
+          }
+
           #sel.meta=meta.file[meta.file$MARKERNAME%in%cond.sel,]
           loc.gwas=match(cond.sel,gwas.file$MARKERNAME)
           loc.ld=match(cond.sel,colnames(gwas.ld))
           sel.gwas=gwas.file[loc.gwas[!is.na(loc.gwas)],]
           add.gwas=gwas.file[gwas.file$MARKERNAME%in%i.remn,]
-          if((length(loc.ld[!is.na(loc.ld)])>0)&(length(loc.gwas[!is.na(loc.gwas)])>0)){
 
-            addsel.ld=matrix(gwas.ld[,colnames(gwas.ld)%in%i.remn],ncol=1,dimnames=list(rownames(gwas.ld),i.remn))
-            addsel.ld=matrix(addsel.ld[loc.ld[!is.na(loc.ld)]],ncol=1,dimnames=list(rownames(addsel.ld)[loc.ld[!is.na(loc.ld)]],i.remn))
+          addsel.ld=matrix(gwas.ld[,colnames(gwas.ld)%in%i.remn],ncol=1,dimnames=list(rownames(gwas.ld),i.remn))
+          addsel.ld=matrix(addsel.ld[loc.ld[!is.na(loc.ld)]],ncol=1,dimnames=list(rownames(addsel.ld)[loc.ld[!is.na(loc.ld)]],i.remn))
 
-            if(length(loc.ld[!is.na(loc.ld)])>1){
-              sel.ld=gwas.ld[loc.ld[!is.na(loc.ld)],loc.ld[!is.na(loc.ld)]]
-            }else{
-              sel.ld=matrix(gwas.ld[loc.ld[!is.na(loc.ld)],loc.ld[!is.na(loc.ld)]],dimnames=list(rownames(gwas.ld)[loc.ld[!is.na(loc.ld)]],colnames(gwas.ld)[loc.ld[!is.na(loc.ld)]]))
-            }
-
-            if(dim(sel.ld)[2]!=dim(sel.gwas)[1]){
-              if(dim(sel.ld)[2]<dim(sel.gwas)[1]){
-                loc=match(colnames(sel.ld),sel.gwas$MARKERNAME)
-                sel.gwas=sel.gwas[loc[!is.na(loc)],]
-              }else{
-                loc=match(sel.gwas$MARKERNAME,colnames(sel.ld))
-                #sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
-                if(length(loc[!is.na(loc)])>1){#revise 250214
-                  sel.ld=sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
-                  addsel.ld=matrix(addsel.ld[rownames(addsel.ld)%in%rownames(sel.ld),],ncol=1,dimnames=list(rownames(sel.ld),i.remn))
-                }else{
-                  sel.ld=matrix(sel.ld[loc[!is.na(loc)],loc[!is.na(loc)]],dimnames=list(rownames(sel.ld)[loc[!is.na(loc)]],colnames(sel.ld)[loc[!is.na(loc)]]))
-                  addsel.ld=matrix(addsel.ld[rownames(addsel.ld)%in%rownames(sel.ld),],dimnames=list(rownames(sel.ld),i.remn))
-                }
-              }
-            }
-            beta.se=meta_sel_condest(add.gwas,sel.gwas,addsel.ld,sel.ld,collinear,actual.geno)
+          if(length(loc.ld[!is.na(loc.ld)])>1){
+            sel.ld=gwas.ld[loc.ld[!is.na(loc.ld)],loc.ld[!is.na(loc.ld)]]
           }else{
-            loc=match(i.remn,colnames(gwas.ld))
+            sel.ld=matrix(gwas.ld[loc.ld[!is.na(loc.ld)],loc.ld[!is.na(loc.ld)]],dimnames=list(rownames(gwas.ld)[loc.ld[!is.na(loc.ld)]],colnames(gwas.ld)[loc.ld[!is.na(loc.ld)]]))
+          }
 
-            if(!is.na(gwas.ld[loc[!is.na(loc)],loc[!is.na(loc)]])){#241004
-              if(length(loc[!is.na(loc)])>1){
-                add.ld=gwas.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
-              }else{
-                add.ld=matrix(gwas.ld[loc[!is.na(loc)],loc[!is.na(loc)]],dimnames=list(rownames(gwas.ld[[i.pop]])[loc[!is.na(loc)]],colnames(gwas.ld[[i.pop]])[loc[!is.na(loc)]]))
-              }
-
-              if(dim(add.ld)[2]!=dim(add.gwas)[1]){
-                if(dim(add.ld)[2]<dim(add.gwas)[1]){
-                  loc=match(colnames(add.ld),add.gwas$MARKERNAME)
-                  add.gwas=add.gwas[loc[!is.na(loc)],]
-                }else{
-                  loc=match(add.gwas$MARKERNAME,colnames(add.ld))
-                  add.ld=add.ld[loc[!is.na(loc)],loc[!is.na(loc)]]
-                }
-              }
-
-              jbeta.se=meta_sel_joinest(sel.gwas=add.gwas,sel.ld=add.ld,actual.geno)
-              beta.se=data.frame(MARKERNAME=jbeta.se$MARKERNAME,cond.BETA=jbeta.se$Join.BETA,cond.invSE2=jbeta.se$Join.invSE2)
-            }else{
-              beta.se=data.frame(MARKERNAME=i.remn,cond.BETA=NA,cond.invSE2=NA)
-            }
-
+          if(any(is.na(sel.ld))|any(is.na(addsel.ld))|any(is.na(sel.gwas$BETA))|any(is.na(sel.gwas$SE))){
+            beta.se=data.frame(MARKERNAME=i.remn,cond.BETA=NA,cond.SE=NA,cond.invSE2=NA,mul.cor=NA,ld.coh=addtg.ld)
+          }else{
+            #revised 250415
+            Vp.med=add.gwas$Vp.med
+            beta.se=meta_sel_condest(add.gwas,sel.gwas,addsel.ld,sel.ld,Vp.med,collinear,actual.geno)
+            #revised 250317
+            beta.se=data.frame(beta.se,ld.coh=addtg.ld)
           }
         }
         return(beta.se)
       }
 
-      gwas.file.cond<-subset(gwas.file,select=c(MARKERNAME,POSITION,CHROMOSOME))
+      gwas.file.cond<-subset(gwas.file,select=c(MARKERNAME,POSITION,CHROMOSOME,EA,NEA))
       gwas.file.cond<-left_join(gwas.file.cond,cond.upd,by="MARKERNAME")
 
       return(gwas.file.cond)
@@ -383,16 +446,51 @@ Calc_condBF<-function(gwas.list,ld.list,which.ld,meta.snp,sel.set,n_cohort,env,P
     stopCluster(cl)
     ################################Perform environment-adjusted MR-MEGA############################
     names(newgwas.list)=names(gwas.list)
+
+    #Assigned to the same reference panel
+    print("All GWAS are assigned to the same reference allele")
+    print("At the same, the correponding LD structures should be adjusted accordingly.")
+    #print("Set the ancestry 1 as the reference allele......")
+
+    for(i_pop in 2:length(newgwas.list)){
+      #print(paste("Check ancestry",i_pop,sep=""))
+      for(j_pop in (i_pop-1):1){
+        cover=newgwas.list[[i_pop-j_pop]]$MARKERNAME%in%newgwas.list[[i_pop]]$MARKERNAME
+        loc=match(newgwas.list[[i_pop-j_pop]]$MARKERNAME,newgwas.list[[i_pop]]$MARKERNAME)
+        same_ea=(newgwas.list[[i_pop]]$EA[loc[complete.cases(loc)]]!=newgwas.list[[i_pop-j_pop]]$EA[cover])
+
+        if(any(same_ea)){
+          newgwas.list[[i_pop]]$EA[loc[complete.cases(loc)]][same_ea]=newgwas.list[[i_pop-j_pop]]$EA[cover][same_ea]
+          newgwas.list[[i_pop]]$NEA[loc[complete.cases(loc)]][same_ea]=newgwas.list[[i_pop-j_pop]]$NEA[cover][same_ea]
+          #newgwas.list[[i_pop]]$EAF[loc[complete.cases(loc)]][same_ea]=1-newgwas.list[[i_pop]]$EAF[loc[complete.cases(loc)]][same_ea]
+          newgwas.list[[i_pop]]$cond.BETA[loc[complete.cases(loc)]][same_ea]=-newgwas.list[[i_pop]]$cond.BETA[loc[complete.cases(loc)]][same_ea]
+        }
+      }
+    }
+
     exp=paste("beta_pop=data.frame(MARKERNAME=remn.set,",paste("Pop",1:n_cohort,"=NA",sep ="",collapse=","),")",sep="")
     eval(parse(text=exp))
     exp2=paste("invse2_pop=data.frame(MARKERNAME=remn.set,",paste("Pop",1:n_cohort,"=NA",sep ="",collapse=","),")",sep="")
     eval(parse(text=exp2))
+
+    #revised 250314
+    exp3=paste("ld_pop=data.frame(MARKERNAME=remn.set,",paste("Pop",1:n_cohort,"=NA",sep ="",collapse=","),")",sep="")
+    eval(parse(text=exp3))
+    #revised 250317
+    exp4=paste("mcor_pop=data.frame(MARKERNAME=remn.set,",paste("Pop",1:n_cohort,"=NA",sep ="",collapse=","),")",sep="")
+    eval(parse(text=exp4))
+
     cohort_count_filt=data.frame(MARKERNAME=remn.set,count_pop=0)
     for(i.pop in 1:n_cohort){
-      cat("i.pop is ",i.pop,"\n")
+      #cat("i.pop is ",i.pop,"\n")
       cover=beta_pop$MARKERNAME%in%newgwas.list[[i.pop]]$MARKERNAME
       loc=match(beta_pop$MARKERNAME,newgwas.list[[i.pop]]$MARKERNAME)
       beta_pop[,i.pop+1][cover]=newgwas.list[[i.pop]]$cond.BETA[loc[complete.cases(loc)]]
+
+      #revised 250314
+      ld_pop[,i.pop+1][cover]=newgwas.list[[i.pop]]$ld.coh[loc[complete.cases(loc)]]
+      #revised 250317
+      mcor_pop[,i.pop+1][cover]=newgwas.list[[i.pop]]$mul.cor[loc[complete.cases(loc)]]
 
       invse2_pop[,i.pop+1][cover]=newgwas.list[[i.pop]]$cond.invSE2[loc[complete.cases(loc)]]
       cohort_count_filt$count_pop[cover][which(!is.na(beta_pop[,i.pop+1][cover]))]=cohort_count_filt$count_pop[cover][which(!is.na(beta_pop[,i.pop+1][cover]))]+1
@@ -400,33 +498,52 @@ Calc_condBF<-function(gwas.list,ld.list,which.ld,meta.snp,sel.set,n_cohort,env,P
     }
 
     meta.temp=MR_mega_run(beta_pop,invse2_pop,cohort_count_filt,env,PCs,ncores)
-    #PPcv=vector(3)
-
-    logsum <- function(x) {
-      my.max <- max(x)
-      my.res <- my.max + log(sum(exp(x - my.max )))
-      return(my.res)
-    }
-
-    #meta.snp=NULL
     if(!is.null(meta.snp)){
+      #revised 250319
+      meta.temp=MR_mega_run(beta_pop,invse2_pop,cohort_count_filt,env,PCs,ncores)
+
+      ld_max=data.frame(MARKERNAME=ld_pop$MARKERNAME,maxld=apply(ld_pop[,-1],1,function(lp){
+        if(!all(is.na(lp))){
+          ld.m=lp[which.max(abs(lp))]
+        }else{
+          ld.m=NA
+        }
+        return(ld.m)}))
+
       PPs=data.frame(MARKERNAME=remn.set,PPs=NA)
       na.BF=(!is.na(meta.temp$logBF))
       PPs$PPs[na.BF]=exp(meta.temp$logBF[na.BF]-logsum(meta.temp$logBF[na.BF]))#exp(meta.temp$logBF[na.BF])/sum(exp(meta.temp$logBF[na.BF]))
       #PPcv
       meta.temp=left_join(meta.temp,PPs,by="MARKERNAME")
-      meta.desc=setorder(meta.temp,-PPs,na.last=TRUE)
+      meta.temp=left_join(meta.temp,ld_max,by="MARKERNAME")
 
+      meta.desc=setorder(meta.temp,-PPs,na.last=TRUE)
       naidx=is.na(meta.desc$PPs)
       meta.desc=meta.desc[!naidx,]
 
       if(!is.null(cred.thr)){
         csm=cumsum(meta.desc$PPs)
-        condmeta.list[[tg.sel]]=meta.desc[1:(which(csm>cred.thr)[1]),]
+        #condmeta.list[[tg.sel]]=meta.desc[1:(which(csm>cred.thr)[1]),]
+        #revised 250314
+        meta.desc=data.frame(meta.desc,cs.inc=rep(c(1,0),c(which(csm>cred.thr)[1],dim(meta.desc)[1]-which(csm>cred.thr)[1])))
       }else{
-        condmeta.list[[tg.sel]]=meta.desc
+        #condmeta.list[[tg.sel]]=meta.desc
+        #revised 250314
+        meta.desc=data.frame(meta.desc,cs.inc=rep(c(1,0),c(dim(meta.desc)[1],0)))
       }
+      condmeta.list[[tg.sel]]=meta.desc[meta.desc$cs.inc==1,]
     }else{
+      #revised 250319
+      mcor.thr=apply(mcor_pop[,-1],1,function(mp){
+        if(all(is.na(mp))){
+          thr=TRUE
+        }else{
+          thr=(max(mp,na.rm=TRUE)<collinear)
+        }
+        return(thr)})
+
+      meta.temp=MR_mega_run(beta_pop[mcor.thr,],invse2_pop[mcor.thr,],cohort_count_filt[mcor.thr,],env,PCs,ncores)
+
       meta.desc=meta.temp
       condmeta.list=rbind(condmeta.list,meta.desc)
     }

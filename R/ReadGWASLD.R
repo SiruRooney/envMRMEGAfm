@@ -7,13 +7,12 @@
 #'@param cohort_name A character vector of length K_g. Each component of the vector corresponds to one GWAS file.
 #'@param ld_name A character vector of length K_ld. Each component of the vector corresponds to one LD structure.
 #'@param out_loc Path to save pre-processed GWAS files and LD structures. By default, out_loc=NULL.
-#'@param actual.geno An indicator to specify whether the true cohort-level LD structure is applied. By default actual.geno=TRUE
 #'@return The output is a list with two main components. One component contains the pre-processed GWAS file list, and another component contains the pre-processed LD structures.
 #'@author Siru Wang
 #'@import data.table
 #'@importFrom stats complete.cases
 #'@export
-read_gwasld<-function(gwas.loc,ld.loc,which.ld,cohort_name,ld_name,out_loc=NULL,actual.geno=TRUE){
+read_gwasld<-function(gwas.loc,ld.loc,which.ld,cohort_name,ld_name,out_loc=NULL){
   if(length(cohort_name)!=length(gwas.loc)){
     stop("The length of cohort_name should be consistent with the number of gwas files!")
   }
@@ -98,55 +97,6 @@ read_gwasld<-function(gwas.loc,ld.loc,which.ld,cohort_name,ld_name,out_loc=NULL,
 
     print(dim(ld.list[[ld.nm]]))
   }
-  #Assigned to the same reference panel
-  print("All GWAS are assigned to the same reference allele")
-  print("Likewise, the corresponding LD structures should be adjusted accordingly.")
-  print("Set the ancestry 1 as the reference allele......")
-
-  #which.ld
-  #if which.ld[i_pop]==which.ld[i_pop-j_pop], keep
-  #if which.ld[i_pop]!=which.ld[i_pop-j_pop], adjust
-  if(isTRUE(actual.geno)){
-    for(i_pop in 2:length(gwas.list)){
-      print(paste("Check ancestry",i_pop,sep=""))
-      for(j_pop in (i_pop-1):1){
-        cover=gwas.list[[i_pop-j_pop]]$MARKERNAME%in%gwas.list[[i_pop]]$MARKERNAME
-        loc=match(gwas.list[[i_pop-j_pop]]$MARKERNAME,gwas.list[[i_pop]]$MARKERNAME)
-        same_ea=(gwas.list[[i_pop]]$EA[loc[complete.cases(loc)]]!=gwas.list[[i_pop-j_pop]]$EA[cover])
-
-        if(any(same_ea)){
-          gwas.list[[i_pop]]$EA[loc[complete.cases(loc)]][same_ea]=gwas.list[[i_pop-j_pop]]$EA[cover][same_ea]
-          gwas.list[[i_pop]]$NEA[loc[complete.cases(loc)]][same_ea]=gwas.list[[i_pop-j_pop]]$NEA[cover][same_ea]
-          gwas.list[[i_pop]]$EAF[loc[complete.cases(loc)]][same_ea]=1-gwas.list[[i_pop]]$EAF[loc[complete.cases(loc)]][same_ea]
-          gwas.list[[i_pop]]$BETA[loc[complete.cases(loc)]][same_ea]=-gwas.list[[i_pop]]$BETA[loc[complete.cases(loc)]][same_ea]
-
-          if(which.ld[i_pop]!=which.ld[i_pop-j_pop]){
-            snp_flip=gwas.list[[i_pop]]$MARKERNAME[loc[complete.cases(loc)]][same_ea]
-            ld.list[[which.ld[i_pop]]][,colnames(ld.list[[which.ld[i_pop]]])%in%snp_flip]=-ld.list[[which.ld[i_pop]]][,colnames(ld.list[[which.ld[i_pop]]])%in%snp_flip]
-            ld.list[[which.ld[i_pop]]][rownames(ld.list[[which.ld[i_pop]]])%in%snp_flip,]=-ld.list[[which.ld[i_pop]]][rownames(ld.list[[which.ld[i_pop]]])%in%snp_flip,]
-          }
-        }
-      }
-    }
-  }else{
-    for(i_pop in 2:length(gwas.list)){
-      print(paste("Check ancestry",i_pop,sep=""))
-      for(j_pop in (i_pop-1):1){
-        cover=gwas.list[[i_pop-j_pop]]$MARKERNAME%in%gwas.list[[i_pop]]$MARKERNAME
-        loc=match(gwas.list[[i_pop-j_pop]]$MARKERNAME,gwas.list[[i_pop]]$MARKERNAME)
-        same_ea=(gwas.list[[i_pop]]$EA[loc[complete.cases(loc)]]!=gwas.list[[i_pop-j_pop]]$EA[cover])
-
-        #print(paste(ssp[[i_pop]]$MARKERNAME[loc[complete.cases(loc)]][same_ea]," are different from the reference alleles in ancestry 1.",sep=""))
-        if(any(same_ea)){
-          gwas.list[[i_pop]]$EA[loc[complete.cases(loc)]][same_ea]=gwas.list[[i_pop-j_pop]]$EA[cover][same_ea]
-          gwas.list[[i_pop]]$NEA[loc[complete.cases(loc)]][same_ea]=gwas.list[[i_pop-j_pop]]$NEA[cover][same_ea]
-          gwas.list[[i_pop]]$EAF[loc[complete.cases(loc)]][same_ea]=1-gwas.list[[i_pop]]$EAF[loc[complete.cases(loc)]][same_ea]
-          gwas.list[[i_pop]]$BETA[loc[complete.cases(loc)]][same_ea]=-gwas.list[[i_pop]]$BETA[loc[complete.cases(loc)]][same_ea]
-        }
-      }
-    }
-  }
-
 
   ##Output the GWAS file after flipping the EA and NEA.
 

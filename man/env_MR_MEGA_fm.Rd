@@ -16,7 +16,7 @@ env_MR_MEGA_fm(
   collinear = 0.9,
   pvalue_cutoff = 5e-08,
   cred.thr = 0.99,
-  actual.geno = TRUE
+  actual.geno = FALSE
 )
 }
 \arguments{
@@ -46,7 +46,7 @@ such as 0.9, the target SNP is ignored.}
 
 \item{cred.thr}{Credible threshold for the credible set for each selected potential SNP. By default, cred.thr=0.99 refers to 99\% credible sets.}
 
-\item{actual.geno}{An indicator to specify whether the true cohort-level LD structure is applied. If actual.geno is TRUE, the inputted LD structures are derived from the true individual-level genotype data.}
+\item{actual.geno}{An indicator to specify whether the true cohort-level LD structure is applied. If actual.geno is TRUE, the inputted LD structures are derived from the true individual-level genotype data. By default, actual.geno=FALSE is recommended in GCTA-COJO software.}
 }
 \value{
 A list of length 2. One component contains the selected potential associated SNP. Another component contains their credible sets with the specified thresholds. By default, the credible threshold is set to 0.99.

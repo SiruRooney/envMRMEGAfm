@@ -50,7 +50,15 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">meta_sel_condest</span><span class="op">(</span><span class="va">add.gwas</span>, <span class="va">sel.gwas</span>, <span class="va">addsel.ld</span>, <span class="va">sel.ld</span>, <span class="va">collinear</span>, <span class="va">actual.geno</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">meta_sel_condest</span><span class="op">(</span></span>
+<span>  <span class="va">add.gwas</span>,</span>
+<span>  <span class="va">sel.gwas</span>,</span>
+<span>  <span class="va">addsel.ld</span>,</span>
+<span>  <span class="va">sel.ld</span>,</span>
+<span>  <span class="va">Vp.med</span>,</span>
+<span>  <span class="va">collinear</span>,</span>
+<span>  <span class="va">actual.geno</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -69,6 +77,10 @@
 
 <dt>sel.ld</dt>
 <dd><p>A LD matrix containing the correlation between the SNP set.</p></dd>
+
+
+<dt>Vp.med</dt>
+<dd><p>The median of variance of phenotype. Refer to GCTA-COJO.</p></dd>
 
 
 <dt>collinear</dt>

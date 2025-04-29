@@ -68,7 +68,7 @@ Fine-mapping</h1>
                   <a class="author_email" href="mailto:#"></a><a href="mailto:sw2077@cam.ac.uk" class="email">sw2077@cam.ac.uk</a>
       
                   
-            <h4 data-toc-skip class="date">16 February, 2025</h4>
+            <h4 data-toc-skip class="date">29 April, 2025</h4>
       
       
       <div class="hidden name"><code>envMRMEGAfm.Rmd</code></div>
@@ -335,7 +335,7 @@ pre-processing these raw data.</p>
 <span><span class="co">#Each African population is stratified into male and female cohorts.</span></span>
 <span><span class="va">pop</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"esn.female"</span>,<span class="st">"esn.male"</span>,<span class="st">"gwd.female"</span>,<span class="st">"gwd.male"</span>,<span class="st">"lwk.female"</span>,<span class="st">"lwk.male"</span>,<span class="st">"msl.female"</span>,<span class="st">"msl.male"</span>,<span class="st">"yri.female"</span>,<span class="st">"yri.male"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">gwasld</span><span class="op">=</span><span class="fu"><a href="../reference/read_gwasld.html">read_gwasld</a></span><span class="op">(</span><span class="va">gwas.loc</span>,<span class="va">ld.loc</span>,which.ld<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">LD</span>,each<span class="op">=</span><span class="fl">2</span><span class="op">)</span>,cohort_name<span class="op">=</span><span class="va">pop</span>,ld_name<span class="op">=</span><span class="va">LD</span>,out_loc<span class="op">=</span><span class="cn">NULL</span>,actual.geno<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">gwasld</span><span class="op">=</span><span class="fu"><a href="../reference/read_gwasld.html">read_gwasld</a></span><span class="op">(</span><span class="va">gwas.loc</span>,<span class="va">ld.loc</span>,which.ld<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">LD</span>,each<span class="op">=</span><span class="fl">2</span><span class="op">)</span>,cohort_name<span class="op">=</span><span class="va">pop</span>,ld_name<span class="op">=</span><span class="va">LD</span>,out_loc<span class="op">=</span><span class="cn">NULL</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "i in filesize 1"</span></span>
 <span><span class="co">#&gt; [1] "Reading gwas file /Volumes/Mac/Stepwise_conditioning/Codes/env-MR-MEGAfm-Rpack/g1000_5afr_Rpack/gwasfile/esn_female.txt"</span></span>
 <span><span class="co">#&gt; There are  301  SNPs in this GWAS file</span></span>
@@ -391,19 +391,7 @@ pre-processing these raw data.</p>
 <span><span class="co">#&gt; [1] "matrix" "array" </span></span>
 <span><span class="co">#&gt; [1] 299 299</span></span>
 <span><span class="co">#&gt; [1] "matrix" "array" </span></span>
-<span><span class="co">#&gt; [1] 293 293</span></span>
-<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
-<span><span class="co">#&gt; [1] "Likewise, the corresponding LD structures should be adjusted accordingly."</span></span>
-<span><span class="co">#&gt; [1] "Set the ancestry 1 as the reference allele......"</span></span>
-<span><span class="co">#&gt; [1] "Check ancestry2"</span></span>
-<span><span class="co">#&gt; [1] "Check ancestry3"</span></span>
-<span><span class="co">#&gt; [1] "Check ancestry4"</span></span>
-<span><span class="co">#&gt; [1] "Check ancestry5"</span></span>
-<span><span class="co">#&gt; [1] "Check ancestry6"</span></span>
-<span><span class="co">#&gt; [1] "Check ancestry7"</span></span>
-<span><span class="co">#&gt; [1] "Check ancestry8"</span></span>
-<span><span class="co">#&gt; [1] "Check ancestry9"</span></span>
-<span><span class="co">#&gt; [1] "Check ancestry10"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 293 293</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">gwas.list</span><span class="op">=</span><span class="va">gwasld</span><span class="op">$</span><span class="va">gwas.list</span></span>
@@ -440,7 +428,8 @@ real individual-level genotype data of the involved cohorts, the
 argument <code>actual.geno</code> is set to <code>TRUE</code>. If we
 estimate LD approximation from the reference sample as a replacement,
 <code>actual.geno</code> is set to <code>FALSE</code>. By default
-<code>actual.geno</code>=TRUE.</p></li>
+<code>actual.geno</code>=FALSE.The default value is consistent for
+GCTA-COJO setting.</p></li>
 </ul>
 </div>
 <div class="section level3">
@@ -509,56 +498,60 @@ covariates (<span style="color: #3182bd;">S</span>), with the limitation
 <code class="sourceCode R"><span></span>
 <span><span class="co">######################################env-MR-MEGA fine-mapping###################################</span></span>
 <span><span class="fu">tictoc</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">tic</a></span><span class="op">(</span><span class="st">"Run env-MR-MEGA fine-mapping method"</span><span class="op">)</span></span>
-<span><span class="va">envmetafm.out</span><span class="op">=</span><span class="fu"><a href="../reference/env_MR_MEGA_fm.html">env_MR_MEGA_fm</a></span><span class="op">(</span><span class="va">gwas.list</span>,<span class="va">ld.list</span>,which.ld<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ld.list</span><span class="op">)</span>,each<span class="op">=</span><span class="fl">2</span><span class="op">)</span>,meta.file<span class="op">=</span><span class="va">envMRMEGAout</span>,PCs<span class="op">=</span><span class="va">pcs</span>,env<span class="op">=</span><span class="va">sexsmk</span>,out_loc<span class="op">=</span><span class="cn">NULL</span>,ncores<span class="op">=</span><span class="fl">1</span>,collinear<span class="op">=</span><span class="fl">0.9</span>,pvalue_cutoff<span class="op">=</span><span class="fl">5e-8</span>,cred.thr<span class="op">=</span><span class="fl">0.99</span>,actual.geno<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/RevolutionAnalytics/doparallel" class="external-link">doParallel</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Loading required package: foreach</span></span>
+<span><span class="co">#&gt; Loading required package: iterators</span></span>
+<span><span class="co">#&gt; Loading required package: parallel</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">envmetafm.out</span><span class="op">=</span><span class="fu"><a href="../reference/env_MR_MEGA_fm.html">env_MR_MEGA_fm</a></span><span class="op">(</span><span class="va">gwas.list</span>,<span class="va">ld.list</span>,which.ld<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ld.list</span><span class="op">)</span>,each<span class="op">=</span><span class="fl">2</span><span class="op">)</span>,meta.file<span class="op">=</span><span class="va">envMRMEGAout</span>,PCs<span class="op">=</span><span class="va">pcs</span>,env<span class="op">=</span><span class="va">sexsmk</span>,out_loc<span class="op">=</span><span class="cn">NULL</span>,ncores<span class="op">=</span><span class="fl">2</span>,collinear<span class="op">=</span><span class="fl">0.9</span>,pvalue_cutoff<span class="op">=</span><span class="fl">5e-8</span>,cred.thr<span class="op">=</span><span class="fl">0.99</span><span class="op">)</span></span>
 <span><span class="co">#&gt; (Collinearity cutoff =  0.9 )</span></span>
-<span><span class="co">#&gt; The number of cores are  1 , which are used for running in parallel</span></span>
+<span><span class="co">#&gt; The number of cores are  2 , which are used for running in parallel</span></span>
 <span><span class="co">#&gt; The threshold for credible set is set to  0.99 .</span></span>
-<span><span class="co">#&gt; [1] "The set of the selected SNPs is"</span></span>
-<span><span class="co">#&gt; [1] "rs73939822"</span></span>
-<span><span class="co">#&gt; trace.cond is  1 </span></span>
 <span><span class="co">#&gt; i.pop is  1 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  2 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  3 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  4 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  5 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  6 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  7 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  8 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  9 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  10 </span></span>
-<span><span class="co">#&gt; [1] "Linear regression model for each genetic variant"</span></span>
-<span><span class="co">#&gt; [1] "The set of the selected SNPs is"</span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
+<span><span class="co">#&gt; At the  1 iteration, the set of the selected SNPs include </span></span>
+<span><span class="co">#&gt; [1] "rs73939822"</span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
+<span><span class="co">#&gt; At the  2 iteration, the set of the selected SNPs include </span></span>
 <span><span class="co">#&gt; [1] "rs73939822" "rs60269219"</span></span>
-<span><span class="co">#&gt; trace.cond is  2 </span></span>
+<span><span class="co">#&gt; The target selected genetic variant is rs73939822 </span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
+<span><span class="co">#&gt; The target selected genetic variant is rs60269219 </span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
 <span><span class="co">#&gt; There are  2  potential associated SNPs! </span></span>
 <span><span class="co">#&gt; The target selected genetic variant is rs73939822 </span></span>
-<span><span class="co">#&gt; i.pop is  1 </span></span>
-<span><span class="co">#&gt; i.pop is  2 </span></span>
-<span><span class="co">#&gt; i.pop is  3 </span></span>
-<span><span class="co">#&gt; i.pop is  4 </span></span>
-<span><span class="co">#&gt; i.pop is  5 </span></span>
-<span><span class="co">#&gt; i.pop is  6 </span></span>
-<span><span class="co">#&gt; i.pop is  7 </span></span>
-<span><span class="co">#&gt; i.pop is  8 </span></span>
-<span><span class="co">#&gt; i.pop is  9 </span></span>
-<span><span class="co">#&gt; i.pop is  10 </span></span>
-<span><span class="co">#&gt; [1] "Linear regression model for each genetic variant"</span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
 <span><span class="co">#&gt; The target selected genetic variant is rs60269219 </span></span>
-<span><span class="co">#&gt; i.pop is  1 </span></span>
-<span><span class="co">#&gt; i.pop is  2 </span></span>
-<span><span class="co">#&gt; i.pop is  3 </span></span>
-<span><span class="co">#&gt; i.pop is  4 </span></span>
-<span><span class="co">#&gt; i.pop is  5 </span></span>
-<span><span class="co">#&gt; i.pop is  6 </span></span>
-<span><span class="co">#&gt; i.pop is  7 </span></span>
-<span><span class="co">#&gt; i.pop is  8 </span></span>
-<span><span class="co">#&gt; i.pop is  9 </span></span>
-<span><span class="co">#&gt; i.pop is  10 </span></span>
-<span><span class="co">#&gt; [1] "Linear regression model for each genetic variant"</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">tictoc</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">toc</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Run env-MR-MEGA fine-mapping method: 14.807 sec elapsed</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">tictoc</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">toc</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Run env-MR-MEGA fine-mapping method: 14.776 sec elapsed</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">envmetafm.out</span></span>
 <span><span class="co">#&gt; $sel.set</span></span>
 <span><span class="co">#&gt; [1] "rs73939822" "rs60269219"</span></span>
@@ -566,76 +559,79 @@ covariates (<span style="color: #3182bd;">S</span>), with the limitation
 <span><span class="co">#&gt; $tgCS.thr</span></span>
 <span><span class="co">#&gt; $tgCS.thr$rs73939822</span></span>
 <span><span class="co">#&gt;     MARKERNAME chisq_association ndf_association pvalue_association chisq_heter</span></span>
-<span><span class="co">#&gt; 215 rs73939822          2085.739               5                  0    438.6733</span></span>
+<span><span class="co">#&gt; 215 rs73939822          1972.823               5                  0    424.8579</span></span>
 <span><span class="co">#&gt;     ndf_chisq_heter pvalue_heter chisq_residual ndf_residual pvalue_residual</span></span>
-<span><span class="co">#&gt; 215               4 1.220077e-93       6.785201            5       0.2371116</span></span>
-<span><span class="co">#&gt;        logBF       PPs</span></span>
-<span><span class="co">#&gt; 215 1037.113 0.9999359</span></span>
+<span><span class="co">#&gt; 215               4 1.181767e-90       6.102112            5       0.2964094</span></span>
+<span><span class="co">#&gt;       logBF       PPs maxld cs.inc</span></span>
+<span><span class="co">#&gt; 215 980.655 0.9987435     1      1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $tgCS.thr$rs60269219</span></span>
 <span><span class="co">#&gt;    MARKERNAME chisq_association ndf_association pvalue_association chisq_heter</span></span>
-<span><span class="co">#&gt; 77 rs60269219          1867.462               5                  0    464.6008</span></span>
-<span><span class="co">#&gt; 76 rs61079153          1865.130               5                  0    463.9473</span></span>
+<span><span class="co">#&gt; 77 rs60269219          1701.090               5                  0    437.7434</span></span>
+<span><span class="co">#&gt; 76 rs61079153          1699.642               5                  0    437.3153</span></span>
+<span><span class="co">#&gt; 78 rs59356929          1691.853               5                  0    432.7377</span></span>
 <span><span class="co">#&gt;    ndf_chisq_heter pvalue_heter chisq_residual ndf_residual pvalue_residual</span></span>
-<span><span class="co">#&gt; 77               4 3.027787e-99       6.014644            5       0.3047966</span></span>
-<span><span class="co">#&gt; 76               4 4.192095e-99       6.166388            5       0.2903637</span></span>
-<span><span class="co">#&gt;       logBF       PPs</span></span>
-<span><span class="co">#&gt; 77 927.9747 0.7596789</span></span>
-<span><span class="co">#&gt; 76 926.8086 0.2367029</span></span></code></pre></div>
+<span><span class="co">#&gt; 77               4 1.938165e-93       5.764427            5       0.3298202</span></span>
+<span><span class="co">#&gt; 76               4 2.398521e-93       5.911945            5       0.3148816</span></span>
+<span><span class="co">#&gt; 78               4 2.341041e-92       5.978292            5       0.3083369</span></span>
+<span><span class="co">#&gt;       logBF         PPs maxld cs.inc</span></span>
+<span><span class="co">#&gt; 77 844.7887 0.666173442     1      1</span></span>
+<span><span class="co">#&gt; 76 844.0645 0.322890947     1      1</span></span>
+<span><span class="co">#&gt; 78 840.1698 0.006570714     1      1</span></span></code></pre></div>
 <p><strong>MR-MEGAfm</strong></p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">######################################MR-MEGA fine-mapping###################################</span></span>
 <span><span class="fu">tictoc</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">tic</a></span><span class="op">(</span><span class="st">"Run env-MR-MEGA fine-mapping method"</span><span class="op">)</span></span>
-<span><span class="va">metafm.out</span><span class="op">=</span><span class="fu"><a href="../reference/env_MR_MEGA_fm.html">env_MR_MEGA_fm</a></span><span class="op">(</span><span class="va">gwas.list</span>,<span class="va">ld.list</span>,which.ld<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ld.list</span><span class="op">)</span>,each<span class="op">=</span><span class="fl">2</span><span class="op">)</span>,meta.file<span class="op">=</span><span class="va">MRMEGAout</span>,PCs<span class="op">=</span><span class="va">pcs</span>,env<span class="op">=</span><span class="cn">NULL</span>,out_loc<span class="op">=</span><span class="cn">NULL</span>,ncores<span class="op">=</span><span class="fl">1</span>,collinear<span class="op">=</span><span class="fl">0.9</span>,pvalue_cutoff<span class="op">=</span><span class="fl">5e-8</span>,cred.thr<span class="op">=</span><span class="fl">0.99</span>,actual.geno<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/RevolutionAnalytics/doparallel" class="external-link">doParallel</a></span><span class="op">)</span></span>
+<span><span class="va">metafm.out</span><span class="op">=</span><span class="fu"><a href="../reference/env_MR_MEGA_fm.html">env_MR_MEGA_fm</a></span><span class="op">(</span><span class="va">gwas.list</span>,<span class="va">ld.list</span>,which.ld<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ld.list</span><span class="op">)</span>,each<span class="op">=</span><span class="fl">2</span><span class="op">)</span>,meta.file<span class="op">=</span><span class="va">MRMEGAout</span>,PCs<span class="op">=</span><span class="va">pcs</span>,env<span class="op">=</span><span class="cn">NULL</span>,out_loc<span class="op">=</span><span class="cn">NULL</span>,ncores<span class="op">=</span><span class="fl">2</span>,collinear<span class="op">=</span><span class="fl">0.9</span>,pvalue_cutoff<span class="op">=</span><span class="fl">5e-8</span>,cred.thr<span class="op">=</span><span class="fl">0.99</span><span class="op">)</span></span>
 <span><span class="co">#&gt; (Collinearity cutoff =  0.9 )</span></span>
-<span><span class="co">#&gt; The number of cores are  1 , which are used for running in parallel</span></span>
+<span><span class="co">#&gt; The number of cores are  2 , which are used for running in parallel</span></span>
 <span><span class="co">#&gt; The threshold for credible set is set to  0.99 .</span></span>
-<span><span class="co">#&gt; [1] "The set of the selected SNPs is"</span></span>
-<span><span class="co">#&gt; [1] "rs73939822"</span></span>
-<span><span class="co">#&gt; trace.cond is  1 </span></span>
 <span><span class="co">#&gt; i.pop is  1 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  2 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  3 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  4 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  5 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  6 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  7 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  8 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  9 </span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
 <span><span class="co">#&gt; i.pop is  10 </span></span>
-<span><span class="co">#&gt; [1] "Linear regression model for each genetic variant"</span></span>
-<span><span class="co">#&gt; [1] "The set of the selected SNPs is"</span></span>
+<span><span class="co">#&gt; Whether the inputted LD is cohort-matched LD FALSE </span></span>
+<span><span class="co">#&gt; At the  1 iteration, the set of the selected SNPs include </span></span>
+<span><span class="co">#&gt; [1] "rs73939822"</span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
+<span><span class="co">#&gt; At the  2 iteration, the set of the selected SNPs include </span></span>
 <span><span class="co">#&gt; [1] "rs73939822" "rs60269219"</span></span>
-<span><span class="co">#&gt; trace.cond is  2 </span></span>
+<span><span class="co">#&gt; The target selected genetic variant is rs73939822 </span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
+<span><span class="co">#&gt; The target selected genetic variant is rs60269219 </span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
 <span><span class="co">#&gt; There are  2  potential associated SNPs! </span></span>
 <span><span class="co">#&gt; The target selected genetic variant is rs73939822 </span></span>
-<span><span class="co">#&gt; i.pop is  1 </span></span>
-<span><span class="co">#&gt; i.pop is  2 </span></span>
-<span><span class="co">#&gt; i.pop is  3 </span></span>
-<span><span class="co">#&gt; i.pop is  4 </span></span>
-<span><span class="co">#&gt; i.pop is  5 </span></span>
-<span><span class="co">#&gt; i.pop is  6 </span></span>
-<span><span class="co">#&gt; i.pop is  7 </span></span>
-<span><span class="co">#&gt; i.pop is  8 </span></span>
-<span><span class="co">#&gt; i.pop is  9 </span></span>
-<span><span class="co">#&gt; i.pop is  10 </span></span>
-<span><span class="co">#&gt; [1] "Linear regression model for each genetic variant"</span></span>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span>
 <span><span class="co">#&gt; The target selected genetic variant is rs60269219 </span></span>
-<span><span class="co">#&gt; i.pop is  1 </span></span>
-<span><span class="co">#&gt; i.pop is  2 </span></span>
-<span><span class="co">#&gt; i.pop is  3 </span></span>
-<span><span class="co">#&gt; i.pop is  4 </span></span>
-<span><span class="co">#&gt; i.pop is  5 </span></span>
-<span><span class="co">#&gt; i.pop is  6 </span></span>
-<span><span class="co">#&gt; i.pop is  7 </span></span>
-<span><span class="co">#&gt; i.pop is  8 </span></span>
-<span><span class="co">#&gt; i.pop is  9 </span></span>
-<span><span class="co">#&gt; i.pop is  10 </span></span>
-<span><span class="co">#&gt; [1] "Linear regression model for each genetic variant"</span></span></code></pre></div>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">tictoc</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">toc</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Run env-MR-MEGA fine-mapping method: 14.256 sec elapsed</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "All GWAS are assigned to the same reference allele"</span></span>
+<span><span class="co">#&gt; [1] "At the same, the correponding LD structures should be adjusted accordingly."</span></span></code></pre></div>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">tictoc</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/tictoc/man/tic.html" class="external-link">toc</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Run env-MR-MEGA fine-mapping method: 15.723 sec elapsed</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">metafm.out</span></span>
 <span><span class="co">#&gt; $sel.set</span></span>
@@ -643,29 +639,32 @@ covariates (<span style="color: #3182bd;">S</span>), with the limitation
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $tgCS.thr</span></span>
 <span><span class="co">#&gt; $tgCS.thr$rs73939822</span></span>
-<span><span class="co">#&gt;     MARKERNAME chisq_association ndf_association pvalue_association chisq_heter</span></span>
-<span><span class="co">#&gt; 215 rs73939822          1664.794               3                  0    17.72886</span></span>
-<span><span class="co">#&gt;     ndf_chisq_heter pvalue_heter chisq_residual ndf_residual pvalue_residual</span></span>
-<span><span class="co">#&gt; 215               2 0.0001413274       427.7297            7    2.682509e-88</span></span>
-<span><span class="co">#&gt;        logBF       PPs</span></span>
-<span><span class="co">#&gt; 215 828.9433 0.9987016</span></span>
+<span><span class="co">#&gt;      MARKERNAME chisq_association ndf_association pvalue_association</span></span>
+<span><span class="co">#&gt; 215  rs73939822          1559.156               3                  0</span></span>
+<span><span class="co">#&gt; 222 rs143024846          1551.294               3                  0</span></span>
+<span><span class="co">#&gt;     chisq_heter ndf_chisq_heter pvalue_heter chisq_residual ndf_residual</span></span>
+<span><span class="co">#&gt; 215    11.19101               2  0.003714517       419.7690            7</span></span>
+<span><span class="co">#&gt; 222    10.05222               2  0.006564303       414.2482            7</span></span>
+<span><span class="co">#&gt;     pvalue_residual    logBF        PPs maxld cs.inc</span></span>
+<span><span class="co">#&gt; 215    1.370481e-86 776.1242 0.98075059     1      1</span></span>
+<span><span class="co">#&gt; 222    2.096064e-85 772.1933 0.01924941     1      1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $tgCS.thr$rs60269219</span></span>
 <span><span class="co">#&gt;    MARKERNAME chisq_association ndf_association pvalue_association chisq_heter</span></span>
-<span><span class="co">#&gt; 77 rs60269219          1412.679               3      5.221899e-306    9.817948</span></span>
-<span><span class="co">#&gt; 76 rs61079153          1410.751               3      1.368683e-305    9.568077</span></span>
-<span><span class="co">#&gt; 78 rs59356929          1406.336               3      1.242617e-304    9.610003</span></span>
-<span><span class="co">#&gt; 82 rs57294488          1405.348               3      2.035290e-304    9.716930</span></span>
+<span><span class="co">#&gt; 77 rs60269219          1274.359               3      5.387582e-276    11.01200</span></span>
+<span><span class="co">#&gt; 76 rs61079153          1273.117               3      1.001923e-275    10.79051</span></span>
+<span><span class="co">#&gt; 78 rs59356929          1269.974               3      4.818463e-275    10.85875</span></span>
+<span><span class="co">#&gt; 82 rs57294488          1268.921               3      8.154631e-275    10.98314</span></span>
 <span><span class="co">#&gt;    ndf_chisq_heter pvalue_heter chisq_residual ndf_residual pvalue_residual</span></span>
-<span><span class="co">#&gt; 77               2  0.007380057       460.7975            7    2.130240e-95</span></span>
-<span><span class="co">#&gt; 76               2  0.008362161       460.5456            7    2.412915e-95</span></span>
-<span><span class="co">#&gt; 78               2  0.008188688       455.6337            7    2.738816e-94</span></span>
-<span><span class="co">#&gt; 82               2  0.007762388       455.8723            7    2.434016e-94</span></span>
-<span><span class="co">#&gt;       logBF        PPs</span></span>
-<span><span class="co">#&gt; 77 702.8858 0.69023291</span></span>
-<span><span class="co">#&gt; 76 701.9216 0.26316306</span></span>
-<span><span class="co">#&gt; 78 699.7141 0.02894082</span></span>
-<span><span class="co">#&gt; 82 699.2203 0.01766320</span></span></code></pre></div>
+<span><span class="co">#&gt; 77               2  0.004062321       432.4959            7    2.544181e-89</span></span>
+<span><span class="co">#&gt; 76               2  0.004538063       432.4367            7    2.619670e-89</span></span>
+<span><span class="co">#&gt; 78               2  0.004385831       427.8572            7    2.518646e-88</span></span>
+<span><span class="co">#&gt; 82               2  0.004121372       428.0893            7    2.245652e-88</span></span>
+<span><span class="co">#&gt;       logBF        PPs maxld cs.inc</span></span>
+<span><span class="co">#&gt; 77 633.7256 0.58308761     1      1</span></span>
+<span><span class="co">#&gt; 76 633.1047 0.31338763     1      1</span></span>
+<span><span class="co">#&gt; 78 631.5329 0.06508363     1      1</span></span>
+<span><span class="co">#&gt; 82 631.0064 0.03844113     1      1</span></span></code></pre></div>
 <p>The results from both MR-MEGAfm and env-MR-MEGAfm comprise two main
 parts:</p>
 <ul>
@@ -684,6 +683,13 @@ association of each variant. <code>chisq_</code>, <code>ndf_</code> and
 and p-values of the corresponding test.</p></li>
 <li><p><code>chisq_residual</code>, <code>ndf_residual</code> and
 <code>pvalue_residual</code>: test of residual heterogeneity.</p></li>
+<li><p><code>logBF</code>: log of Bayesian Factor.</p></li>
+<li><p><code>PPs</code>: Posterior probability.</p></li>
+<li><p><code>max_ld</code>: The maximum of LD value between each target
+selected variant and the variants in the credible set.</p></li>
+<li><p><code>cs.inc</code>: The indicator for determining whether the
+variants should be included in the credible sets based on the specified
+credible threshold.</p></li>
 </ul>
 <p>For MR-MEGAfm,</p>
 <ul>

@@ -52,15 +52,7 @@ EA and NEA of the first GWAS file.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_gwasld</span><span class="op">(</span></span>
-<span>  <span class="va">gwas.loc</span>,</span>
-<span>  <span class="va">ld.loc</span>,</span>
-<span>  <span class="va">which.ld</span>,</span>
-<span>  <span class="va">cohort_name</span>,</span>
-<span>  <span class="va">ld_name</span>,</span>
-<span>  out_loc <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  actual.geno <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_gwasld</span><span class="op">(</span><span class="va">gwas.loc</span>, <span class="va">ld.loc</span>, <span class="va">which.ld</span>, <span class="va">cohort_name</span>, <span class="va">ld_name</span>, out_loc <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -87,10 +79,6 @@ EA and NEA of the first GWAS file.</p>
 
 <dt>out_loc</dt>
 <dd><p>Path to save pre-processed GWAS files and LD structures. By default, out_loc=NULL.</p></dd>
-
-
-<dt>actual.geno</dt>
-<dd><p>An indicator to specify whether the true cohort-level LD structure is applied. By default actual.geno=TRUE</p></dd>
 
 </dl></div>
     <div id="value">
