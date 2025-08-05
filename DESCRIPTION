@@ -1,0 +1,26 @@
+Package: envMRMEGAfm
+Title: Environment-adjusted Meta-Regression of Multi-Ancestry Genetic Association Fine-mapping (envMRMEGAfm)
+Version: 0.1.1
+Authors@R: c(person(given = "Siru", family = "Wang", role = c("aut", "cre"), email = "sw2077@cam.ac.uk", comment=c(ORCID="0000-0001-8630-8337")),
+      person(given = "Jennifer", family = "Asimit", role = "aut", email = "ja628@cam.ac.uk",comment=c(ORCID="0000-0002-4857-2249")),
+       person(given = "Andrew", family = "Morris",middle = "P", role = "aut", email = "andrew.morris-5@manchester.ac.uk",comment=c(ORCID="0000-0002-6805-6014")))
+Description: The (env-)MR-MEGAfm method is designed for fine-mapping genetic associations across multiple cohorts, allowing for multiple causal variants.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Imports: 
+    data.table,
+    doParallel,
+    dplyr,
+    foreach,
+    parallel,
+    stats,
+    tictoc
+Depends: 
+    R (>= 4.3.0)
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+LazyData: true

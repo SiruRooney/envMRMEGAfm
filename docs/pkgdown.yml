@@ -1,0 +1,7 @@
+pandoc: 3.1.1
+pkgdown: 2.0.7
+pkgdown_sha: ~
+articles:
+  envMRMEGAfm: envMRMEGAfm.html
+last_built: 2025-08-05T19:43Z
+
