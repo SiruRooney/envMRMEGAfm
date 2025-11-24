@@ -29,7 +29,7 @@ install.packages("parallel")
 install.packages("stats")
 ```
 
-You can install the GitHub version of **envMRMEGAfm**:
+You can install the GitHub version of **envMRMEGAfm** and the **envMRMEGAfm** R package installation can be finished in 1 minute:
 
 ``` r
 # install.packages("devtools")

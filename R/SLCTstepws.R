@@ -44,7 +44,7 @@ env_MR_MEGA_fm<-function(gwas.list,ld.list,which.ld,meta.file,PCs,env,out_loc=NU
   ncores <- min(c(ncores,parallel::detectCores(logical = TRUE)))
   cl<-makeCluster(ncores,type="FORK")#shared memory
   registerDoParallel(cl)
-  gwas.list<-foreach(i.pop=1:n_cohort, .final = function(x) {setNames(x,names(gwas.list))})%do%{
+  gwas.list<-foreach(i.pop=1:n_cohort, .final = function(x) {setNames(x,names(gwas.list))})%dopar%{
     cat("i.pop is ",i.pop,"\n")
     gwas.file=gwas.list[[i.pop]]
 
