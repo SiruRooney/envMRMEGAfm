@@ -446,25 +446,35 @@ envmetafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=
 #> [1] "rs73939822"
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> At the  2 iteration, the set of the selected SNPs include 
 #> [1] "rs73939822" "rs60269219"
 #> The target selected genetic variant is rs73939822 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> The target selected genetic variant is rs60269219 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> There are  2  potential associated SNPs! 
 #> The target selected genetic variant is rs73939822 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> The target selected genetic variant is rs60269219 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
+#> Linear regression model for each genetic variant, and the number of cores are  2
 tictoc::toc()
-#> Run env-MR-MEGA fine-mapping method: 25.196 sec elapsed
+#> Run env-MR-MEGA fine-mapping method: 24.237 sec elapsed
 envmetafm.out
 #> $sel.set
 #> [1] "rs73939822" "rs60269219"
@@ -519,25 +529,35 @@ metafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=2),
 #> [1] "rs73939822"
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> At the  2 iteration, the set of the selected SNPs include 
 #> [1] "rs73939822" "rs60269219"
 #> The target selected genetic variant is rs73939822 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> The target selected genetic variant is rs60269219 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> There are  2  potential associated SNPs! 
 #> The target selected genetic variant is rs73939822 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
+#> Linear regression model for each genetic variant, and the number of cores are  2 
 #> The target selected genetic variant is rs60269219 
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
+#> Linear regression model for each genetic variant, and the number of cores are  2 
+#> Linear regression model for each genetic variant, and the number of cores are  2
 tictoc::toc()
-#> Run env-MR-MEGA fine-mapping method: 23.381 sec elapsed
+#> Run env-MR-MEGA fine-mapping method: 21.419 sec elapsed
 
 metafm.out
 #> $sel.set

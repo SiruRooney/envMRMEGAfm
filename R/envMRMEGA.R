@@ -132,7 +132,7 @@ MR_mega_run<-function(beta_pop,invse2_pop,cohort_count_filt,env,PCs,ncores){
   pcCount=dim(PCs)[2]
   #Run linear regression in parallel and return results of hyporthese testings
   ncores <- min(c(ncores, parallel::detectCores(logical = TRUE)))
-  #print("Linear regression model for each genetic variant")
+  cat("Linear regression model for each genetic variant, and the number of cores are ",ncores,"\n")
   if(ncores>1){
     cl<-makeCluster(ncores,type="FORK")#shared memory
     registerDoParallel(cl)
@@ -157,6 +157,7 @@ MR_mega_run<-function(beta_pop,invse2_pop,cohort_count_filt,env,PCs,ncores){
       }
       return(lr_out)
     }
+    stopCluster(cl)
   }else{
     lr_out<-foreach(i_snp=1:dim(beta_pop)[1],.combine=rbind)%do%{
       #cat("i_snp=",i_snp,"\n")
