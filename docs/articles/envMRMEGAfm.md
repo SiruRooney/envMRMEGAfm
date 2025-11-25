@@ -464,7 +464,7 @@ envmetafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
 tictoc::toc()
-#> Run env-MR-MEGA fine-mapping method: 27.091 sec elapsed
+#> Run env-MR-MEGA fine-mapping method: 25.196 sec elapsed
 envmetafm.out
 #> $sel.set
 #> [1] "rs73939822" "rs60269219"
@@ -537,7 +537,7 @@ metafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=2),
 #> [1] "All GWAS are assigned to the same reference allele"
 #> [1] "At the same, the correponding LD structures should be adjusted accordingly."
 tictoc::toc()
-#> Run env-MR-MEGA fine-mapping method: 24.689 sec elapsed
+#> Run env-MR-MEGA fine-mapping method: 23.381 sec elapsed
 
 metafm.out
 #> $sel.set
