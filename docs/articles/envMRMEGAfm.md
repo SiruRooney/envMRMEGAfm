@@ -474,7 +474,7 @@ envmetafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=
 #> Linear regression model for each genetic variant, and the number of cores are  2 
 #> Linear regression model for each genetic variant, and the number of cores are  2
 tictoc::toc()
-#> Run env-MR-MEGA fine-mapping method: 24.237 sec elapsed
+#> Run env-MR-MEGA fine-mapping method: 28.969 sec elapsed
 envmetafm.out
 #> $sel.set
 #> [1] "rs73939822" "rs60269219"
@@ -557,7 +557,7 @@ metafm.out=env_MR_MEGA_fm(gwas.list,ld.list,which.ld=rep(names(ld.list),each=2),
 #> Linear regression model for each genetic variant, and the number of cores are  2 
 #> Linear regression model for each genetic variant, and the number of cores are  2
 tictoc::toc()
-#> Run env-MR-MEGA fine-mapping method: 21.419 sec elapsed
+#> Run env-MR-MEGA fine-mapping method: 25.029 sec elapsed
 
 metafm.out
 #> $sel.set
